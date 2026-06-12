@@ -1,15 +1,13 @@
 /**
  * DYOR2 — CheckpointPage
- * Design: Precision Instrument
  * Checkpoint: User reviews sources, min 3 approved to unlock synthesis
+ * Design: DYOR design system — ink/paper, Poppins, flat hairline borders
  */
 
 import React from "react";
 import { useApp } from "@/store/AppContext";
 import { SourceChip } from "@/components/SourceChip";
-import { Button } from "@/components/ui/button";
 import { ArrowRight, ShieldCheck, AlertTriangle } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const MIN_APPROVED = 3;
 
@@ -18,85 +16,78 @@ export default function CheckpointPage() {
 
   const approvedSources = state.researchSources.filter((s) => s.approved);
   const rejectedSources = state.researchSources.filter((s) => !s.approved);
-  const approvedCount = approvedSources.length;
-  const canProceed = approvedCount >= MIN_APPROVED;
-
-  function handleProceed() {
-    dispatch({ type: "ADVANCE_STAGE", stage: 4 });
-  }
+  const approvedCount   = approvedSources.length;
+  const canProceed      = approvedCount >= MIN_APPROVED;
+  const progressPct     = Math.min(100, (approvedCount / Math.max(state.researchSources.length, 1)) * 100);
 
   return (
-    <div className="stage-enter max-w-3xl mx-auto px-4 py-10">
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground mb-3 uppercase tracking-widest">
-          <span className="w-5 h-px bg-muted-foreground" />
+      <div style={{ marginBottom: "2rem" }}>
+        <div className="stage-label" style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <span style={{ width: 20, height: 1, background: "var(--muted-color)", display: "inline-block" }} />
           Checkpoint
         </div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Source Review</h1>
-        <p className="text-muted-foreground">
+        <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "2rem", color: "var(--ink)", marginBottom: "0.5rem" }}>
+          Source Review
+        </h1>
+        <p style={{ color: "var(--muted-color)", fontSize: "0.9375rem", lineHeight: 1.6 }}>
           Weak sources poison synthesis. Review each source and approve at least{" "}
-          <strong>{MIN_APPROVED}</strong> before running the synthesis analysis.
+          <strong style={{ color: "var(--ink)" }}>{MIN_APPROVED}</strong> before running the synthesis analysis.
         </p>
       </div>
 
       {/* Status bar */}
-      <div
-        className={cn(
-          "flex items-center gap-3 p-4 rounded-xl border mb-8",
-          canProceed
-            ? "bg-[var(--color-signal-green-bg)] border-[var(--color-signal-green)]/30"
-            : "bg-[var(--color-signal-amber-bg)] border-[var(--color-signal-amber)]/30"
-        )}
-      >
-        {canProceed ? (
-          <ShieldCheck className="w-5 h-5 text-[var(--color-signal-green)] flex-shrink-0" />
-        ) : (
-          <AlertTriangle className="w-5 h-5 text-[var(--color-signal-amber)] flex-shrink-0" />
-        )}
-        <div className="flex-1">
-          <p
-            className={cn(
-              "text-sm font-semibold",
-              canProceed
-                ? "text-[var(--color-signal-green)]"
-                : "text-[var(--color-signal-amber)]"
-            )}
-          >
+      <div style={{
+        display: "flex", alignItems: "center", gap: "1rem",
+        padding: "1rem 1.25rem",
+        background: canProceed
+          ? "color-mix(in srgb, var(--signal-green) 8%, var(--paper))"
+          : "color-mix(in srgb, var(--signal-amber) 8%, var(--paper))",
+        border: `0.5px solid ${canProceed
+          ? "color-mix(in srgb, var(--signal-green) 30%, transparent)"
+          : "color-mix(in srgb, var(--signal-amber) 30%, transparent)"}`,
+        borderRadius: "var(--radius)",
+        marginBottom: "2rem",
+      }}>
+        {canProceed
+          ? <ShieldCheck size={18} style={{ color: "var(--signal-green)", flexShrink: 0 }} />
+          : <AlertTriangle size={18} style={{ color: "var(--signal-amber)", flexShrink: 0 }} />
+        }
+        <div style={{ flex: 1 }}>
+          <p style={{
+            fontWeight: 600, fontSize: "0.875rem",
+            color: canProceed ? "var(--signal-green)" : "var(--signal-amber)",
+          }}>
             {canProceed
               ? `${approvedCount} sources approved — ready for synthesis`
               : `${approvedCount} of ${MIN_APPROVED} required sources approved`}
           </p>
           {!canProceed && (
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Approve {MIN_APPROVED - approvedCount} more source
-              {MIN_APPROVED - approvedCount !== 1 ? "s" : ""} to continue
+            <p style={{ fontSize: "0.75rem", color: "var(--muted-color)", marginTop: "0.2rem" }}>
+              Approve {MIN_APPROVED - approvedCount} more source{MIN_APPROVED - approvedCount !== 1 ? "s" : ""} to continue
             </p>
           )}
         </div>
-
         {/* Progress bar */}
-        <div className="w-24 h-2 bg-border rounded-full overflow-hidden flex-shrink-0">
-          <div
-            className={cn(
-              "h-full rounded-full transition-all duration-300",
-              canProceed ? "bg-[var(--color-signal-green)]" : "bg-[var(--color-signal-amber)]"
-            )}
-            style={{
-              width: `${Math.min(100, (approvedCount / Math.max(state.researchSources.length, 1)) * 100)}%`,
-            }}
-          />
+        <div style={{ width: 80, height: 4, background: "var(--border-color)", borderRadius: 99, overflow: "hidden", flexShrink: 0 }}>
+          <div style={{
+            height: "100%", borderRadius: 99,
+            background: canProceed ? "var(--signal-green)" : "var(--signal-amber)",
+            width: `${progressPct}%`,
+            transition: "width 300ms cubic-bezier(0.23,1,0.32,1)",
+          }} />
         </div>
       </div>
 
       {/* Approved sources */}
       {approvedSources.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[var(--color-signal-green)]" />
+        <div style={{ marginBottom: "1.5rem" }}>
+          <h2 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: "var(--font-body)", fontWeight: 600, fontSize: "0.875rem", color: "var(--ink)", marginBottom: "0.75rem" }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--signal-green)", display: "inline-block" }} />
             Approved ({approvedSources.length})
           </h2>
-          <div className="space-y-2">
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {approvedSources.map((source) => (
               <SourceChip
                 key={source.id}
@@ -110,12 +101,12 @@ export default function CheckpointPage() {
 
       {/* Rejected sources */}
       {rejectedSources.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-border" />
+        <div style={{ marginBottom: "1.5rem" }}>
+          <h2 style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontFamily: "var(--font-body)", fontWeight: 600, fontSize: "0.875rem", color: "var(--muted-color)", marginBottom: "0.75rem" }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--border-color)", display: "inline-block" }} />
             Rejected ({rejectedSources.length})
           </h2>
-          <div className="space-y-2">
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {rejectedSources.map((source) => (
               <SourceChip
                 key={source.id}
@@ -128,16 +119,16 @@ export default function CheckpointPage() {
       )}
 
       {/* Proceed */}
-      <div className="flex justify-end mt-6">
-        <Button
-          onClick={handleProceed}
+      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "1.5rem" }}>
+        <button
+          onClick={() => dispatch({ type: "ADVANCE_STAGE", stage: 4 })}
           disabled={!canProceed}
-          size="lg"
-          className={cn(!canProceed && "opacity-50 cursor-not-allowed")}
+          className="btn-primary"
+          style={{ padding: "0.75rem 1.5rem", fontSize: "0.9375rem" }}
         >
           Run Synthesis
-          <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
+          <ArrowRight size={16} />
+        </button>
       </div>
     </div>
   );

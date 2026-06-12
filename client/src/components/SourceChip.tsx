@@ -1,111 +1,108 @@
 /**
  * DYOR2 — SourceChip Component
- * Design: Precision Instrument — compact source card
- * Credibility badge (high/medium/low) + approve/reject toggle
+ * Design: DYOR design system — compact source card, ink/paper, hairline borders
  */
 
 import React from "react";
-import { cn } from "@/lib/utils";
 import type { SourceObject } from "@/store/reducer";
 import { CheckCircle2, XCircle, ExternalLink } from "lucide-react";
 
 const CREDIBILITY_CONFIG = {
-  high: {
-    label: "High",
-    class: "bg-[var(--color-signal-green-bg)] text-[var(--color-signal-green)] border-[var(--color-signal-green)]",
-  },
-  medium: {
-    label: "Med",
-    class: "bg-blue-50 text-blue-600 border-blue-200",
-  },
-  low: {
-    label: "Low",
-    class: "bg-[var(--color-signal-amber-bg)] text-[var(--color-signal-amber)] border-[var(--color-signal-amber)]",
-  },
+  high:   { label: "High", color: "var(--signal-green)" },
+  medium: { label: "Med",  color: "var(--research-blue)" },
+  low:    { label: "Low",  color: "var(--signal-amber)" },
 };
 
 interface SourceChipProps {
   source: SourceObject;
   onToggle: (id: string) => void;
-  className?: string;
 }
 
-export function SourceChip({ source, onToggle, className }: SourceChipProps) {
+export function SourceChip({ source, onToggle }: SourceChipProps) {
   const credConfig = CREDIBILITY_CONFIG[source.credibility];
   const hostname = (() => {
-    try {
-      return new URL(source.url).hostname.replace("www.", "");
-    } catch {
-      return source.url;
-    }
+    try { return new URL(source.url).hostname.replace("www.", ""); }
+    catch { return source.url; }
   })();
 
   return (
     <div
-      className={cn(
-        "border rounded-lg p-3 transition-all duration-150 card-enter",
-        source.approved
-          ? "border-primary/30 bg-primary/5"
-          : "border-border bg-muted/30 opacity-60",
-        className
-      )}
+      className="card-enter"
+      style={{
+        border: source.approved
+          ? "0.5px solid color-mix(in srgb, var(--research-blue) 40%, transparent)"
+          : "0.5px solid var(--border-color)",
+        borderRadius: "var(--radius)",
+        padding: "0.75rem 1rem",
+        background: source.approved
+          ? "color-mix(in srgb, var(--research-blue) 4%, var(--paper))"
+          : "color-mix(in srgb, var(--ink) 2%, var(--paper))",
+        opacity: source.approved ? 1 : 0.65,
+        transition: "all 150ms ease-out",
+      }}
     >
-      <div className="flex items-start gap-2">
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
         {/* Approve toggle */}
         <button
           onClick={() => onToggle(source.id)}
-          className={cn(
-            "flex-shrink-0 mt-0.5 transition-all duration-150 hover:scale-110",
-            source.approved ? "text-primary" : "text-muted-foreground"
-          )}
           aria-label={source.approved ? "Reject source" : "Approve source"}
-          title={source.approved ? "Click to reject" : "Click to approve"}
+          style={{
+            flexShrink: 0, background: "none", border: "none", cursor: "pointer", padding: 0,
+            color: source.approved ? "var(--research-blue)" : "var(--muted-color)",
+            marginTop: 2, transition: "color 150ms ease-out, transform 100ms ease-out",
+          }}
+          onMouseEnter={(e) => (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.1)"}
+          onMouseLeave={(e) => (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"}
         >
-          {source.approved ? (
-            <CheckCircle2 className="w-4 h-4" />
-          ) : (
-            <XCircle className="w-4 h-4" />
-          )}
+          {source.approved
+            ? <CheckCircle2 size={16} />
+            : <XCircle size={16} />
+          }
         </button>
 
-        <div className="flex-1 min-w-0">
+        <div style={{ flex: 1, minWidth: 0 }}>
           {/* Title + credibility */}
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <p className="text-sm font-medium text-foreground leading-snug line-clamp-2">
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.5rem", marginBottom: "0.25rem" }}>
+            <p style={{ fontWeight: 600, fontSize: "0.875rem", color: "var(--ink)", lineHeight: 1.4 }}>
               {source.title}
             </p>
-            <span
-              className={cn(
-                "flex-shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded border",
-                credConfig.class
-              )}
-            >
+            <span style={{
+              flexShrink: 0,
+              fontFamily: "var(--font-mono)", fontSize: "0.5625rem", fontWeight: 700,
+              padding: "0.15rem 0.4rem",
+              borderRadius: 4,
+              background: `color-mix(in srgb, ${credConfig.color} 12%, var(--paper))`,
+              border: `0.5px solid color-mix(in srgb, ${credConfig.color} 30%, transparent)`,
+              color: credConfig.color, textTransform: "uppercase", letterSpacing: "0.04em",
+            }}>
               {credConfig.label}
             </span>
           </div>
 
-          {/* Domain + date */}
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="font-mono text-xs text-muted-foreground truncate">{hostname}</span>
+          {/* Domain + date + link */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.375rem" }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.6875rem", color: "var(--muted-color)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {hostname}
+            </span>
             {source.date && (
-              <span className="text-xs text-muted-foreground flex-shrink-0">
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.6875rem", color: "var(--muted-color)", flexShrink: 0 }}>
                 {new Date(source.date).getFullYear()}
               </span>
             )}
             <a
-              href={source.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-shrink-0 text-muted-foreground hover:text-primary transition-colors"
+              href={source.url} target="_blank" rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
+              style={{ flexShrink: 0, color: "var(--muted-color)", display: "flex", alignItems: "center", transition: "color 150ms ease-out" }}
+              onMouseEnter={(e) => (e.currentTarget as HTMLAnchorElement).style.color = "var(--research-blue)"}
+              onMouseLeave={(e) => (e.currentTarget as HTMLAnchorElement).style.color = "var(--muted-color)"}
             >
-              <ExternalLink className="w-3 h-3" />
+              <ExternalLink size={11} />
             </a>
           </div>
 
           {/* Snippet */}
           {source.snippet && (
-            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
+            <p style={{ fontSize: "0.8125rem", color: "var(--muted-color)", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
               {source.snippet}
             </p>
           )}

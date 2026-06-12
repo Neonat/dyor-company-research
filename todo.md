@@ -55,3 +55,17 @@
 - [x] Canva deck: outline review modal implemented; full Canva API requires Canva OAuth (noted in UI)
 - [x] Session persistence: full pipeline state persisted in localStorage via dyor2_session
 - [x] Export: PDF via browser print, Gamma via API key modal
+
+## Design Refresh (DYOR Design System)
+
+- [x] Apply DYOR design framework: ink/paper palette (#F4F2EC surface, #1A1A1A ink), Poppins display font
+- [x] Generate cute investigator mascot (loading/empty/success/error states) via AI image generation
+- [x] Upload mascot images to webdev static storage
+- [x] Update index.css with full DYOR design tokens (btn-primary, btn-outline, btn-secondary, dyor-card, signal classes, animations)
+- [x] Add card-enter, stage-enter, mascot-bob, spin keyframe animations
+- [x] Add print-only CSS classes for PDF export layout
+- [x] Rewrite StageNav with DYOR wordmark and ink/paper nodes
+- [x] Rewrite all 6 pipeline pages with DYOR design system (inline styles, no Tailwind color classes)
+- [x] Rewrite all shared components (SignalCard, SourceChip, ProblemCard, JourneyMap, RegenerateButton)
+- [x] Update App.tsx with DYOR layout and company context strip
+- [x] All 8 tests still passing after redesign

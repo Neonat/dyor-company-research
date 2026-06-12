@@ -89,7 +89,7 @@ export interface ProblemSet {
 export interface AppState {
   companyName: string;
   role: string;
-  currentStage: 1 | 2 | 3 | 4 | 5;
+  currentStage: 1 | 2 | 3 | 4 | 5 | 6;
   intakeBrief: IntakeBrief | null;
   exaPrompts: ExaPromptSet | null;
   researchSources: SourceObject[];
@@ -131,7 +131,7 @@ export type AppAction =
   | { type: "TOGGLE_SHORTLIST"; problemId: string }
   | { type: "SET_LOADING"; section: string | null }
   | { type: "SET_ERROR"; section: string | null; message?: string | null }
-  | { type: "ADVANCE_STAGE"; stage: 1 | 2 | 3 | 4 | 5 }
+  | { type: "ADVANCE_STAGE"; stage: 1 | 2 | 3 | 4 | 5 | 6 }
   | { type: "RESET" };
 
 // ─── Reducer ─────────────────────────────────────────────────────────────────

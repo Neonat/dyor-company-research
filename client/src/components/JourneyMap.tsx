@@ -1,34 +1,23 @@
 /**
  * DYOR2 — JourneyMap Component
- * Design: Precision Instrument — horizontal step renderer
- * ok=neutral/green, partial=amber, failure=red
+ * Design: DYOR design system — horizontal step renderer
+ * ok=green, partial=amber, failure=red
  */
 
 import React from "react";
-import { cn } from "@/lib/utils";
 import type { JourneyStep } from "@/store/reducer";
 
 const STEP_CONFIG = {
   ok: {
-    nodeClass: "bg-[var(--color-signal-green)] border-[var(--color-signal-green)]",
-    labelClass: "text-[var(--color-signal-green)]",
-    lineClass: "bg-[var(--color-signal-green)]",
+    color: "var(--signal-green)",
     icon: (
       <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-        <path
-          d="M2 5L4 7L8 3"
-          stroke="white"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
+        <path d="M2 5L4 7L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
   },
   partial: {
-    nodeClass: "bg-[var(--color-signal-amber)] border-[var(--color-signal-amber)]",
-    labelClass: "text-[var(--color-signal-amber)]",
-    lineClass: "bg-[var(--color-signal-amber)]",
+    color: "var(--signal-amber)",
     icon: (
       <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
         <path d="M5 2V5" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
@@ -37,17 +26,10 @@ const STEP_CONFIG = {
     ),
   },
   failure: {
-    nodeClass: "bg-[var(--color-signal-red)] border-[var(--color-signal-red)]",
-    labelClass: "text-[var(--color-signal-red)]",
-    lineClass: "bg-[var(--color-signal-red)]",
+    color: "var(--signal-red)",
     icon: (
       <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-        <path
-          d="M3 3L7 7M7 3L3 7"
-          stroke="white"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-        />
+        <path d="M3 3L7 7M7 3L3 7" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
     ),
   },
@@ -55,45 +37,42 @@ const STEP_CONFIG = {
 
 interface JourneyMapProps {
   steps: JourneyStep[];
-  className?: string;
 }
 
-export function JourneyMap({ steps, className }: JourneyMapProps) {
+export function JourneyMap({ steps }: JourneyMapProps) {
   if (!steps || steps.length === 0) return null;
 
   return (
-    <div className={cn("w-full overflow-x-auto", className)}>
-      <div className="flex items-start min-w-max py-2">
+    <div style={{ width: "100%", overflowX: "auto" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", minWidth: "max-content", padding: "0.5rem 0" }}>
         {steps.map((step, idx) => {
           const config = STEP_CONFIG[step.status];
           const isLast = idx === steps.length - 1;
 
           return (
-            <div key={idx} className="flex items-start">
+            <div key={idx} style={{ display: "flex", alignItems: "flex-start" }}>
               {/* Step node + label */}
-              <div className="flex flex-col items-center gap-1.5 min-w-[72px] max-w-[96px]">
-                <div
-                  className={cn(
-                    "w-7 h-7 rounded-full border-2 flex items-center justify-center flex-shrink-0",
-                    config.nodeClass
-                  )}
-                >
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.375rem", minWidth: 72, maxWidth: 96 }}>
+                <div style={{
+                  width: 26, height: 26, borderRadius: "50%",
+                  background: config.color,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0,
+                }}>
                   {config.icon}
                 </div>
-                <span
-                  className={cn(
-                    "text-[10px] font-medium text-center leading-tight px-1",
-                    config.labelClass
-                  )}
-                >
+                <span style={{
+                  fontFamily: "var(--font-mono)", fontSize: "0.5625rem", fontWeight: 600,
+                  color: config.color, textAlign: "center", lineHeight: 1.3, padding: "0 0.25rem",
+                }}>
                   {step.label}
                 </span>
               </div>
 
               {/* Connector line */}
               {!isLast && (
-                <div className="flex items-center mt-3.5 mx-0.5">
-                  <div className={cn("h-0.5 w-6 opacity-40", config.lineClass)} />
+                <div style={{ display: "flex", alignItems: "center", marginTop: 13, marginLeft: 2, marginRight: 2 }}>
+                  <div style={{ height: 1.5, width: 24, background: config.color, opacity: 0.35 }} />
                 </div>
               )}
             </div>

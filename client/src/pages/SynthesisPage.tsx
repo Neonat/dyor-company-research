@@ -1,6 +1,7 @@
 /**
  * DYOR2 — SynthesisPage
  * Stage 4: Approved sources → Claude returns signal scorecard + tensions + analyst actions
+ * Design: DYOR design system — ink/paper, Poppins, flat hairline borders, mascot states
  */
 
 import React, { useEffect } from "react";
@@ -8,24 +9,20 @@ import { useApp } from "@/store/AppContext";
 import { trpc } from "@/lib/trpc";
 import { SignalCard } from "@/components/SignalCard";
 import { RegenerateButton } from "@/components/RegenerateButton";
-import { Button } from "@/components/ui/button";
+import Mascot from "@/components/Mascot";
 import { ArrowRight, AlertCircle, Zap, TrendingUp, ListChecks } from "lucide-react";
 
 export default function SynthesisPage() {
   const { state, dispatch } = useApp();
 
-  const isLoading = state.loadingSection === "synthesis";
-  const hasError = state.errorSection === "synthesis";
-  const hasSynthesis = !!state.synthesisReport;
+  const isLoading     = state.loadingSection === "synthesis";
+  const hasError      = state.errorSection   === "synthesis";
+  const hasSynthesis  = !!state.synthesisReport;
   const approvedSources = state.researchSources.filter((s) => s.approved);
 
   const getSynthesisMutation = trpc.dyor.getSynthesis.useMutation({
-    onSuccess: (report) => {
-      dispatch({ type: "SET_SYNTHESIS_REPORT", report });
-    },
-    onError: (err) => {
-      dispatch({ type: "SET_ERROR", section: "synthesis", message: err.message });
-    },
+    onSuccess: (report) => { dispatch({ type: "SET_SYNTHESIS_REPORT", report }); },
+    onError:   (err)    => { dispatch({ type: "SET_ERROR", section: "synthesis", message: err.message }); },
   });
 
   function runSynthesis() {
@@ -35,82 +32,73 @@ export default function SynthesisPage() {
       companyName: state.intakeBrief.companyName,
       role: state.role,
       approvedSources: approvedSources.map((s) => ({
-        id: s.id,
-        title: s.title,
-        url: s.url,
-        snippet: s.snippet,
-        credibility: s.credibility,
+        id: s.id, title: s.title, url: s.url, snippet: s.snippet, credibility: s.credibility,
       })),
     });
   }
 
-  // Auto-run synthesis when page loads if no report yet
   useEffect(() => {
     if (!state.synthesisReport && !isLoading && state.intakeBrief && approvedSources.length >= 3) {
       runSynthesis();
     }
   }, []);
 
-  function handleProceed() {
-    dispatch({ type: "ADVANCE_STAGE", stage: 5 });
-  }
-
   return (
-    <div className="stage-enter max-w-3xl mx-auto px-4 py-10">
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground mb-3 uppercase tracking-widest">
-          <span className="w-5 h-px bg-muted-foreground" />
+      <div style={{ marginBottom: "2rem" }}>
+        <div className="stage-label" style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <span style={{ width: 20, height: 1, background: "var(--muted-color)", display: "inline-block" }} />
           Stage 04
         </div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Synthesis</h1>
-        <p className="text-muted-foreground">
-          Claude is synthesising {approvedSources.length} approved sources into a structured
-          signal scorecard for <strong>{state.companyName}</strong>.
+        <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "2rem", color: "var(--ink)", marginBottom: "0.5rem" }}>
+          Synthesis
+        </h1>
+        <p style={{ color: "var(--muted-color)", fontSize: "0.9375rem", lineHeight: 1.6 }}>
+          Claude is synthesising {approvedSources.length} approved sources into a structured signal
+          scorecard for <strong style={{ color: "var(--ink)" }}>{state.companyName}</strong>.
         </p>
       </div>
 
       {/* Error */}
       {hasError && (
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm mb-6">
-          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+        <div style={{
+          display: "flex", alignItems: "flex-start", gap: "0.625rem",
+          padding: "0.875rem 1rem",
+          background: "color-mix(in srgb, var(--signal-red) 8%, var(--paper))",
+          border: "0.5px solid color-mix(in srgb, var(--signal-red) 30%, transparent)",
+          borderRadius: "var(--radius)", marginBottom: "1.5rem",
+        }}>
+          <AlertCircle size={16} style={{ color: "var(--signal-red)", flexShrink: 0, marginTop: 2 }} />
           <div>
-            <p className="font-medium">Synthesis failed</p>
-            {state.errorMessage && <p className="text-xs mt-0.5 opacity-80">{state.errorMessage}</p>}
-            <button onClick={runSynthesis} className="text-xs underline mt-1 hover:no-underline">
+            <p style={{ fontWeight: 600, fontSize: "0.875rem", color: "var(--signal-red)" }}>Synthesis failed</p>
+            {state.errorMessage && <p style={{ fontSize: "0.8125rem", color: "var(--muted-color)", marginTop: "0.25rem" }}>{state.errorMessage}</p>}
+            <button onClick={runSynthesis} style={{ fontSize: "0.75rem", color: "var(--research-blue)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: "0.25rem" }}>
               Try again
             </button>
           </div>
         </div>
       )}
 
-      {/* Loading skeleton */}
+      {/* Loading mascot */}
       {isLoading && (
-        <div className="space-y-4 animate-pulse">
-          <div className="h-5 w-40 rounded bg-muted mb-6" />
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-24 rounded-lg bg-muted" />
-          ))}
-        </div>
+        <Mascot state="loading" caption="Synthesising sources into a signal scorecard… this may take 20 seconds." />
       )}
 
       {/* Synthesis report */}
       {hasSynthesis && !isLoading && state.synthesisReport && (
-        <div className="space-y-8">
+        <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+
           {/* Signal Scorecard */}
           <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold flex items-center gap-2">
-                <Zap className="w-4 h-4 text-primary" />
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "1rem", color: "var(--ink)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <Zap size={15} style={{ color: "var(--research-blue)" }} />
                 Signal Scorecard
               </h2>
-              <RegenerateButton
-                onClick={runSynthesis}
-                loading={isLoading}
-                label="Regenerate"
-              />
+              <RegenerateButton onClick={runSynthesis} loading={isLoading} label="Regenerate" />
             </div>
-            <div className="space-y-2">
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
               {state.synthesisReport.signals.map((signal, idx) => (
                 <SignalCard key={idx} signal={signal} />
               ))}
@@ -120,21 +108,21 @@ export default function SynthesisPage() {
           {/* Key Tensions */}
           {state.synthesisReport.keyTensions.length > 0 && (
             <section>
-              <h2 className="text-base font-semibold flex items-center gap-2 mb-4">
-                <TrendingUp className="w-4 h-4 text-primary" />
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "1rem", color: "var(--ink)", display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
+                <TrendingUp size={15} style={{ color: "var(--research-blue)" }} />
                 Key Tensions
               </h2>
-              <div className="space-y-2">
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {state.synthesisReport.keyTensions.map((tension, idx) => (
                   <div
                     key={idx}
-                    className="flex items-start gap-3 p-3 border border-border rounded-lg bg-card"
-                    style={{ animationDelay: `${idx * 60}ms` }}
+                    className="dyor-card"
+                    style={{ display: "flex", alignItems: "flex-start", gap: "0.875rem", padding: "0.875rem 1rem", animationDelay: `${idx * 50}ms` }}
                   >
-                    <span className="font-mono text-xs text-muted-foreground flex-shrink-0 mt-0.5">
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.625rem", fontWeight: 600, color: "var(--muted-color)", flexShrink: 0, marginTop: "0.2rem" }}>
                       {String(idx + 1).padStart(2, "0")}
                     </span>
-                    <p className="text-sm text-foreground leading-relaxed">{tension}</p>
+                    <p style={{ fontSize: "0.875rem", color: "var(--ink)", lineHeight: 1.6 }}>{tension}</p>
                   </div>
                 ))}
               </div>
@@ -144,25 +132,31 @@ export default function SynthesisPage() {
           {/* Analyst Actions */}
           {state.synthesisReport.analystActions.length > 0 && (
             <section>
-              <h2 className="text-base font-semibold flex items-center gap-2 mb-4">
-                <ListChecks className="w-4 h-4 text-primary" />
+              <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "1rem", color: "var(--ink)", display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
+                <ListChecks size={15} style={{ color: "var(--research-blue)" }} />
                 Analyst Actions
               </h2>
-              <div className="space-y-2">
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {state.synthesisReport.analystActions
                   .sort((a, b) => a.priority - b.priority)
                   .map((action, idx) => (
                     <div
                       key={idx}
-                      className="flex items-start gap-3 p-3 border border-border rounded-lg bg-card"
-                      style={{ animationDelay: `${idx * 60}ms` }}
+                      className="dyor-card"
+                      style={{ display: "flex", alignItems: "flex-start", gap: "0.875rem", padding: "0.875rem 1rem", animationDelay: `${idx * 50}ms` }}
                     >
-                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
+                      <span style={{
+                        flexShrink: 0, width: 24, height: 24, borderRadius: "50%",
+                        background: "color-mix(in srgb, var(--research-blue) 12%, transparent)",
+                        color: "var(--research-blue)",
+                        fontFamily: "var(--font-mono)", fontSize: "0.625rem", fontWeight: 700,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                      }}>
                         {action.priority}
                       </span>
                       <div>
-                        <p className="text-sm font-semibold text-foreground">{action.action}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                        <p style={{ fontWeight: 600, fontSize: "0.875rem", color: "var(--ink)" }}>{action.action}</p>
+                        <p style={{ fontSize: "0.8125rem", color: "var(--muted-color)", marginTop: "0.25rem", lineHeight: 1.5 }}>
                           {action.rationale}
                         </p>
                       </div>
@@ -173,11 +167,15 @@ export default function SynthesisPage() {
           )}
 
           {/* Proceed */}
-          <div className="flex justify-end pt-2">
-            <Button onClick={handleProceed} size="lg">
+          <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: "0.5rem" }}>
+            <button
+              onClick={() => dispatch({ type: "ADVANCE_STAGE", stage: 5 })}
+              className="btn-primary"
+              style={{ padding: "0.75rem 1.5rem", fontSize: "0.9375rem" }}
+            >
               Generate Problem Statements
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+              <ArrowRight size={16} />
+            </button>
           </div>
         </div>
       )}

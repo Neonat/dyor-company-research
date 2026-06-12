@@ -1,6 +1,7 @@
 /**
  * DYOR2 — ResearchPage
  * Stage 2: Claude generates Exa prompts → user edits → runs search → source cards
+ * Design: DYOR design system — ink/paper, Poppins, flat hairline borders, mascot states
  */
 
 import React, { useState, useEffect } from "react";
@@ -8,11 +9,15 @@ import { useApp } from "@/store/AppContext";
 import { trpc } from "@/lib/trpc";
 import { SourceChip } from "@/components/SourceChip";
 import { RegenerateButton } from "@/components/RegenerateButton";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { ArrowRight, Search, Edit3, AlertCircle, CheckCircle2, Key } from "lucide-react";
-import { cn } from "@/lib/utils";
+import Mascot from "@/components/Mascot";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ArrowRight, Search, Edit3, AlertCircle, CheckCircle2, Key, X } from "lucide-react";
 
 export default function ResearchPage() {
   const { state, dispatch } = useApp();
@@ -23,36 +28,25 @@ export default function ResearchPage() {
   });
   const [showKeyInput, setShowKeyInput] = useState(false);
 
-  const hasPrompts = !!state.exaPrompts && state.exaPrompts.prompts.length > 0;
-  const hasSources = state.researchSources.length > 0;
-  const approvedCount = state.researchSources.filter((s) => s.approved).length;
+  const hasPrompts      = !!state.exaPrompts && state.exaPrompts.prompts.length > 0;
+  const hasSources      = state.researchSources.length > 0;
+  const approvedCount   = state.researchSources.filter((s) => s.approved).length;
   const isPromptsLoading = state.loadingSection === "research-prompts";
-  const isSearchLoading = state.loadingSection === "research-search";
-  const hasError = state.errorSection === "research-prompts" || state.errorSection === "research-search";
+  const isSearchLoading  = state.loadingSection === "research-search";
+  const hasError         = state.errorSection === "research-prompts" || state.errorSection === "research-search";
 
   const getExaPromptsMutation = trpc.dyor.getExaPrompts.useMutation({
-    onSuccess: (data) => {
-      dispatch({ type: "SET_EXA_PROMPTS", prompts: data });
-    },
-    onError: (err) => {
-      dispatch({ type: "SET_ERROR", section: "research-prompts", message: err.message });
-    },
+    onSuccess: (data) => { dispatch({ type: "SET_EXA_PROMPTS", prompts: data }); },
+    onError: (err)  => { dispatch({ type: "SET_ERROR", section: "research-prompts", message: err.message }); },
   });
 
   const runExaSearchMutation = trpc.dyor.runExaSearch.useMutation({
-    onSuccess: (data) => {
-      dispatch({ type: "SET_RESEARCH_SOURCES", sources: data.sources });
-    },
-    onError: (err) => {
-      dispatch({ type: "SET_ERROR", section: "research-search", message: err.message });
-    },
+    onSuccess: (data) => { dispatch({ type: "SET_RESEARCH_SOURCES", sources: data.sources }); },
+    onError: (err)   => { dispatch({ type: "SET_ERROR", section: "research-search", message: err.message }); },
   });
 
-  // Auto-generate prompts when page loads if we have a brief but no prompts
   useEffect(() => {
-    if (state.intakeBrief && !hasPrompts && !isPromptsLoading) {
-      generatePrompts();
-    }
+    if (state.intakeBrief && !hasPrompts && !isPromptsLoading) generatePrompts();
   }, []);
 
   function generatePrompts() {
@@ -64,11 +58,6 @@ export default function ResearchPage() {
       role: state.role,
       publicCxSignals: state.intakeBrief.publicCxSignals,
     });
-  }
-
-  function startEditPrompt(id: string, currentQuery: string) {
-    setEditingPromptId(id);
-    setEditValue(currentQuery);
   }
 
   function saveEditPrompt(id: string) {
@@ -87,36 +76,39 @@ export default function ResearchPage() {
     });
   }
 
-  function handleProceed() {
-    dispatch({ type: "ADVANCE_STAGE", stage: 3 });
-  }
-
   return (
-    <div className="stage-enter max-w-3xl mx-auto px-4 py-10">
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground mb-3 uppercase tracking-widest">
-          <span className="w-5 h-px bg-muted-foreground" />
+      <div style={{ marginBottom: "2rem" }}>
+        <div className="stage-label" style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <span style={{ width: 20, height: 1, background: "var(--muted-color)", display: "inline-block" }} />
           Stage 02
         </div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Research</h1>
-        <p className="text-muted-foreground">
-          Claude has generated targeted search queries for{" "}
-          <strong>{state.companyName}</strong>. Edit any query, then run the search to gather
-          sources.
+        <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "2rem", color: "var(--ink)", marginBottom: "0.5rem" }}>
+          Research
+        </h1>
+        <p style={{ color: "var(--muted-color)", fontSize: "0.9375rem", lineHeight: 1.6 }}>
+          Claude has generated targeted search queries for <strong style={{ color: "var(--ink)" }}>{state.companyName}</strong>.
+          Edit any query, then run the search to gather sources.
         </p>
       </div>
 
       {/* Error */}
       {hasError && (
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm mb-6">
-          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+        <div style={{
+          display: "flex", alignItems: "flex-start", gap: "0.625rem",
+          padding: "0.875rem 1rem",
+          background: "color-mix(in srgb, var(--signal-red) 8%, var(--paper))",
+          border: "0.5px solid color-mix(in srgb, var(--signal-red) 30%, transparent)",
+          borderRadius: "var(--radius)", marginBottom: "1.5rem",
+        }}>
+          <AlertCircle size={16} style={{ color: "var(--signal-red)", flexShrink: 0, marginTop: 2 }} />
           <div>
-            <p className="font-medium">Error</p>
-            {state.errorMessage && <p className="text-xs mt-0.5 opacity-80">{state.errorMessage}</p>}
+            <p style={{ fontWeight: 600, fontSize: "0.875rem", color: "var(--signal-red)" }}>Error</p>
+            {state.errorMessage && <p style={{ fontSize: "0.8125rem", color: "var(--muted-color)", marginTop: "0.25rem" }}>{state.errorMessage}</p>}
             <button
               onClick={state.errorSection === "research-prompts" ? generatePrompts : runSearch}
-              className="text-xs underline mt-1 hover:no-underline"
+              style={{ fontSize: "0.75rem", color: "var(--research-blue)", textDecoration: "underline", marginTop: "0.25rem", background: "none", border: "none", cursor: "pointer", padding: 0 }}
             >
               Try again
             </button>
@@ -125,66 +117,75 @@ export default function ResearchPage() {
       )}
 
       {/* Prompts section */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold flex items-center gap-2">
-            <Search className="w-4 h-4 text-primary" />
+      <div style={{ marginBottom: "1.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+          <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "1rem", color: "var(--ink)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <Search size={15} style={{ color: "var(--research-blue)" }} />
             Search Queries
           </h2>
-          <RegenerateButton
-            onClick={generatePrompts}
-            loading={isPromptsLoading}
-            label="Regenerate queries"
-          />
+          <RegenerateButton onClick={generatePrompts} loading={isPromptsLoading} label="Regenerate queries" />
         </div>
 
         {isPromptsLoading && (
-          <div className="space-y-3 animate-pulse">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-16 rounded-lg bg-muted" />
-            ))}
-          </div>
+          <Mascot state="loading" caption="Generating targeted search queries…" />
         )}
 
         {hasPrompts && !isPromptsLoading && state.exaPrompts && (
-          <div className="space-y-2">
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {state.exaPrompts.prompts.map((prompt, idx) => (
               <div
                 key={prompt.id}
-                className="border border-border rounded-lg p-3 bg-card"
-                style={{ animationDelay: `${idx * 60}ms` }}
+                className="dyor-card"
+                style={{ padding: "0.875rem 1rem", animationDelay: `${idx * 50}ms` }}
               >
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <span className="text-xs font-semibold text-primary">{prompt.label}</span>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.75rem", marginBottom: "0.375rem" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.6875rem", fontWeight: 600, color: "var(--research-blue)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    {prompt.label}
+                  </span>
                   <button
                     onClick={() =>
                       editingPromptId === prompt.id
                         ? saveEditPrompt(prompt.id)
-                        : startEditPrompt(prompt.id, prompt.query)
+                        : (setEditingPromptId(prompt.id), setEditValue(prompt.query))
                     }
-                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+                    style={{
+                      display: "flex", alignItems: "center", gap: "0.25rem",
+                      fontSize: "0.75rem", color: "var(--muted-color)",
+                      background: "none", border: "none", cursor: "pointer", padding: 0,
+                      fontFamily: "var(--font-body)",
+                    }}
                   >
-                    <Edit3 className="w-3 h-3" />
+                    <Edit3 size={11} />
                     {editingPromptId === prompt.id ? "Save" : "Edit"}
                   </button>
                 </div>
 
                 {editingPromptId === prompt.id ? (
-                  <Textarea
+                  <textarea
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}
-                    className="text-sm font-mono min-h-[60px] resize-none"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && e.metaKey) saveEditPrompt(prompt.id);
                       if (e.key === "Escape") setEditingPromptId(null);
                     }}
                     autoFocus
+                    style={{
+                      width: "100%", minHeight: 60, resize: "vertical",
+                      fontFamily: "var(--font-mono)", fontSize: "0.8125rem",
+                      color: "var(--ink)", background: "var(--surface)",
+                      border: "0.5px solid var(--border-color)", borderRadius: "var(--radius-sm)",
+                      padding: "0.5rem 0.625rem", outline: "none",
+                    }}
                   />
                 ) : (
-                  <p className="text-sm font-mono text-foreground">{prompt.query}</p>
+                  <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.8125rem", color: "var(--ink)", lineHeight: 1.5 }}>
+                    {prompt.query}
+                  </p>
                 )}
 
-                <p className="text-xs text-muted-foreground mt-1.5 italic">{prompt.rationale}</p>
+                <p style={{ fontSize: "0.75rem", color: "var(--muted-color)", marginTop: "0.375rem", fontStyle: "italic" }}>
+                  {prompt.rationale}
+                </p>
               </div>
             ))}
           </div>
@@ -193,89 +194,92 @@ export default function ResearchPage() {
 
       {/* Exa API Key + Run Search */}
       {hasPrompts && (
-        <div className="mb-8 p-4 border border-border rounded-xl bg-muted/30">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Key className="w-4 h-4 text-muted-foreground" />
-              <h3 className="text-sm font-semibold">Exa API Key</h3>
+        <div className="dyor-card" style={{ padding: "1rem 1.25rem", marginBottom: "1.5rem", background: "var(--surface)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <Key size={14} style={{ color: "var(--muted-color)" }} />
+              <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "0.875rem", color: "var(--ink)" }}>
+                Exa API Key
+              </h3>
             </div>
             <button
               onClick={() => setShowKeyInput(!showKeyInput)}
-              className="text-xs text-muted-foreground hover:text-foreground underline"
+              style={{ fontSize: "0.75rem", color: "var(--muted-color)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", padding: 0 }}
             >
               {showKeyInput ? "Hide" : exaApiKey ? "Change" : "Enter key"}
             </button>
           </div>
 
           {(showKeyInput || !exaApiKey) && (
-            <div className="mb-3">
-              <Input
+            <div style={{ marginBottom: "0.75rem" }}>
+              <input
                 type="password"
                 value={exaApiKey}
                 onChange={(e) => setExaApiKey(e.target.value)}
                 placeholder="exa_xxxxxxxxxxxxxxxxxxxxxxxx"
-                className="font-mono text-sm"
+                className="dyor-input"
+                style={{ fontFamily: "var(--font-mono)", fontSize: "0.8125rem" }}
               />
-              <p className="text-xs text-muted-foreground mt-1">
+              <p style={{ fontSize: "0.75rem", color: "var(--muted-color)", marginTop: "0.375rem" }}>
                 Get your key at{" "}
-                <a href="https://exa.ai" target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">
+                <a href="https://exa.ai" target="_blank" rel="noopener noreferrer" style={{ color: "var(--research-blue)", textDecoration: "underline" }}>
                   exa.ai
                 </a>
-                . Stored locally only.
+                . Stored locally in your browser only.
               </p>
             </div>
           )}
 
           {exaApiKey && !showKeyInput && (
-            <p className="text-xs text-muted-foreground mb-3">
-              Key saved: <span className="font-mono">••••••••{exaApiKey.slice(-4)}</span>
+            <p style={{ fontSize: "0.8125rem", color: "var(--muted-color)", marginBottom: "0.75rem" }}>
+              Key saved: <span style={{ fontFamily: "var(--font-mono)" }}>••••••••{exaApiKey.slice(-4)}</span>
             </p>
           )}
 
-          <Button
+          <button
             onClick={runSearch}
             disabled={!exaApiKey.trim() || isSearchLoading}
-            className="w-full"
+            className="btn-primary"
+            style={{ width: "100%", justifyContent: "center", padding: "0.625rem 1rem" }}
           >
             {isSearchLoading ? (
               <>
-                <span className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
+                <span style={{
+                  width: 14, height: 14, borderRadius: "50%",
+                  border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff",
+                  animation: "spin 0.7s linear infinite", display: "inline-block",
+                }} />
                 Searching…
               </>
             ) : (
               <>
-                <Search className="w-4 h-4 mr-2" />
+                <Search size={14} />
                 Run Exa Search ({state.exaPrompts?.prompts.length ?? 0} queries)
               </>
             )}
-          </Button>
+          </button>
         </div>
       )}
 
-      {/* Loading search skeleton */}
+      {/* Loading search mascot */}
       {isSearchLoading && state.researchSources.length === 0 && (
-        <div className="space-y-3 animate-pulse">
-          <div className="h-4 w-1/4 rounded bg-muted" />
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-20 rounded-lg bg-muted" />
-          ))}
-        </div>
+        <Mascot state="loading" caption="Searching the web for relevant sources…" />
       )}
 
       {/* Source cards */}
       {hasSources && !isSearchLoading && (
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+            <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "1rem", color: "var(--ink)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <CheckCircle2 size={15} style={{ color: "var(--signal-green)" }} />
               Sources Found
-              <span className="text-xs font-normal text-muted-foreground">
+              <span style={{ fontSize: "0.75rem", fontWeight: 400, color: "var(--muted-color)" }}>
                 ({state.researchSources.length} total, {approvedCount} approved)
               </span>
             </h2>
           </div>
 
-          <div className="space-y-2">
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {state.researchSources.map((source) => (
               <SourceChip
                 key={source.id}
@@ -285,17 +289,24 @@ export default function ResearchPage() {
             ))}
           </div>
 
-          <div className="mt-6 flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
+          <div style={{ marginTop: "1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <p style={{ fontSize: "0.875rem", color: "var(--muted-color)" }}>
               {approvedCount} of {state.researchSources.length} sources approved
             </p>
-            <Button onClick={handleProceed} disabled={approvedCount < 1}>
+            <button
+              onClick={() => dispatch({ type: "ADVANCE_STAGE", stage: 3 })}
+              disabled={approvedCount < 1}
+              className="btn-primary"
+              style={{ padding: "0.625rem 1.25rem" }}
+            >
               Review Sources
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+              <ArrowRight size={15} />
+            </button>
           </div>
         </div>
       )}
+
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

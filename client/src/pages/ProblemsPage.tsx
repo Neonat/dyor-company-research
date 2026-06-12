@@ -1,6 +1,7 @@
 /**
  * DYOR2 — ProblemsPage
- * Stage 5a: Claude returns 3–7 problem cards with journey maps, evidence, solutions
+ * Stage 5: Claude returns 3–7 problem cards with journey maps, evidence, solutions
+ * Design: DYOR design system — ink/paper, Poppins, flat hairline borders, mascot states
  */
 
 import React, { useEffect, useState } from "react";
@@ -8,10 +9,9 @@ import { useApp } from "@/store/AppContext";
 import { trpc } from "@/lib/trpc";
 import { ProblemCard } from "@/components/ProblemCard";
 import { RegenerateButton } from "@/components/RegenerateButton";
-import { Button } from "@/components/ui/button";
+import Mascot from "@/components/Mascot";
 import type { ProblemTag } from "@/store/reducer";
 import { ArrowRight, AlertCircle, Bookmark } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const ALL_TAGS: ProblemTag[] = ["ML", "API", "UX", "systems", "data-pipeline"];
 
@@ -19,17 +19,14 @@ export default function ProblemsPage() {
   const { state, dispatch } = useApp();
   const [activeTag, setActiveTag] = useState<ProblemTag | "all">("all");
 
-  const isLoading = state.loadingSection === "problems";
-  const hasError = state.errorSection === "problems";
+  const isLoading    = state.loadingSection === "problems";
+  const hasError     = state.errorSection   === "problems";
   const hasProblemSet = !!state.problemSet;
+  const shortlistCount = state.shortlist.length;
 
   const getProblemsMutation = trpc.dyor.getProblems.useMutation({
-    onSuccess: (data) => {
-      dispatch({ type: "SET_PROBLEM_SET", problemSet: data });
-    },
-    onError: (err) => {
-      dispatch({ type: "SET_ERROR", section: "problems", message: err.message });
-    },
+    onSuccess: (data) => { dispatch({ type: "SET_PROBLEM_SET", problemSet: data }); },
+    onError:   (err)  => { dispatch({ type: "SET_ERROR", section: "problems", message: err.message }); },
   });
 
   function runProblems() {
@@ -41,161 +38,143 @@ export default function ProblemsPage() {
       role: state.role,
       signals: state.synthesisReport.signals,
       keyTensions: state.synthesisReport.keyTensions,
-      approvedSources: approvedSources.map((s) => ({
-        id: s.id,
-        title: s.title,
-        snippet: s.snippet,
-      })),
+      approvedSources: approvedSources.map((s) => ({ id: s.id, title: s.title, snippet: s.snippet })),
     });
   }
 
-  // Auto-run on page load if no problems yet
   useEffect(() => {
     if (!state.problemSet && !isLoading && state.synthesisReport && state.intakeBrief) {
       runProblems();
     }
   }, []);
 
-  function handleProceed() {
-    dispatch({ type: "ADVANCE_STAGE", stage: 5 });
-  }
-
   const filteredProblems =
-    state.problemSet?.problems.filter(
-      (p) => activeTag === "all" || p.tags.includes(activeTag)
-    ) || [];
-
-  const shortlistCount = state.shortlist.length;
+    state.problemSet?.problems.filter((p) => activeTag === "all" || p.tags.includes(activeTag)) || [];
 
   return (
-    <div className="stage-enter max-w-3xl mx-auto px-4 py-10">
+    <div style={{ maxWidth: 720, margin: "0 auto", padding: "2.5rem 1.5rem" }}>
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground mb-3 uppercase tracking-widest">
-          <span className="w-5 h-px bg-muted-foreground" />
+      <div style={{ marginBottom: "2rem" }}>
+        <div className="stage-label" style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <span style={{ width: 20, height: 1, background: "var(--muted-color)", display: "inline-block" }} />
           Stage 05
         </div>
-        <div className="flex items-start justify-between gap-4">
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem" }}>
           <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Problem Statements</h1>
-            <p className="text-muted-foreground">
-              Evidence-backed problems for <strong>{state.companyName}</strong>. Shortlist
-              the ones most relevant to your analysis.
+            <h1 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "2rem", color: "var(--ink)", marginBottom: "0.5rem" }}>
+              Problem Statements
+            </h1>
+            <p style={{ color: "var(--muted-color)", fontSize: "0.9375rem", lineHeight: 1.6 }}>
+              Evidence-backed problems for <strong style={{ color: "var(--ink)" }}>{state.companyName}</strong>.
+              Shortlist the ones most relevant to your analysis.
             </p>
           </div>
           {hasProblemSet && (
-            <RegenerateButton
-              onClick={runProblems}
-              loading={isLoading}
-              label="Regenerate all"
-              size="md"
-            />
+            <RegenerateButton onClick={runProblems} loading={isLoading} label="Regenerate all" size="md" />
           )}
         </div>
       </div>
 
       {/* Error */}
       {hasError && (
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm mb-6">
-          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+        <div style={{
+          display: "flex", alignItems: "flex-start", gap: "0.625rem",
+          padding: "0.875rem 1rem",
+          background: "color-mix(in srgb, var(--signal-red) 8%, var(--paper))",
+          border: "0.5px solid color-mix(in srgb, var(--signal-red) 30%, transparent)",
+          borderRadius: "var(--radius)", marginBottom: "1.5rem",
+        }}>
+          <AlertCircle size={16} style={{ color: "var(--signal-red)", flexShrink: 0, marginTop: 2 }} />
           <div>
-            <p className="font-medium">Failed to generate problems</p>
-            {state.errorMessage && (
-              <p className="text-xs mt-0.5 opacity-80">{state.errorMessage}</p>
-            )}
-            <button onClick={runProblems} className="text-xs underline mt-1 hover:no-underline">
+            <p style={{ fontWeight: 600, fontSize: "0.875rem", color: "var(--signal-red)" }}>Failed to generate problems</p>
+            {state.errorMessage && <p style={{ fontSize: "0.8125rem", color: "var(--muted-color)", marginTop: "0.25rem" }}>{state.errorMessage}</p>}
+            <button onClick={runProblems} style={{ fontSize: "0.75rem", color: "var(--research-blue)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", padding: 0, marginTop: "0.25rem" }}>
               Try again
             </button>
           </div>
         </div>
       )}
 
-      {/* Loading skeleton */}
+      {/* Loading mascot */}
       {isLoading && (
-        <div className="space-y-4 animate-pulse">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-48 rounded-xl bg-muted" />
-          ))}
-        </div>
+        <Mascot state="loading" caption="Generating evidence-backed problem statements… this may take 30 seconds." />
       )}
 
       {/* Filter bar + problems */}
       {hasProblemSet && !isLoading && state.problemSet && (
         <div>
           {/* Filter bar */}
-          <div className="flex items-center gap-2 mb-6 flex-wrap">
-            <button
-              onClick={() => setActiveTag("all")}
-              className={cn(
-                "text-xs font-semibold px-3 py-1.5 rounded-full border transition-all duration-150",
-                activeTag === "all"
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground"
-              )}
-            >
-              All ({state.problemSet.problems.length})
-            </button>
-            {ALL_TAGS.filter((tag) =>
-              state.problemSet!.problems.some((p) => p.tags.includes(tag))
-            ).map((tag) => {
-              const count = state.problemSet!.problems.filter((p) =>
-                p.tags.includes(tag)
-              ).length;
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
+            {(["all", ...ALL_TAGS.filter((tag) => state.problemSet!.problems.some((p) => p.tags.includes(tag)))] as const).map((tag) => {
+              const count = tag === "all"
+                ? state.problemSet!.problems.length
+                : state.problemSet!.problems.filter((p) => p.tags.includes(tag as ProblemTag)).length;
+              const isActive = activeTag === tag;
               return (
                 <button
                   key={tag}
-                  onClick={() => setActiveTag(tag)}
-                  className={cn(
-                    "text-xs font-semibold px-3 py-1.5 rounded-full border transition-all duration-150",
-                    activeTag === tag
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground"
-                  )}
+                  onClick={() => setActiveTag(tag as ProblemTag | "all")}
+                  style={{
+                    fontFamily: "var(--font-mono)", fontSize: "0.6875rem", fontWeight: 600,
+                    padding: "0.3rem 0.75rem",
+                    borderRadius: 99,
+                    border: isActive ? "1.5px solid var(--ink)" : "0.5px solid var(--border-color)",
+                    background: isActive ? "var(--ink)" : "var(--paper)",
+                    color: isActive ? "var(--paper)" : "var(--muted-color)",
+                    cursor: "pointer",
+                    transition: "all 150ms ease-out",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
                 >
-                  {tag} ({count})
+                  {tag === "all" ? `All (${count})` : `${tag} (${count})`}
                 </button>
               );
             })}
 
             {shortlistCount > 0 && (
-              <span className="ml-auto flex items-center gap-1.5 text-xs text-primary font-medium">
-                <Bookmark className="w-3 h-3" />
+              <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "0.375rem", fontSize: "0.75rem", color: "var(--research-blue)", fontWeight: 600 }}>
+                <Bookmark size={12} />
                 {shortlistCount} shortlisted
               </span>
             )}
           </div>
 
           {/* Problem cards */}
-          <div className="space-y-4">
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             {filteredProblems.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                No problems match the selected filter.
-              </p>
+              <Mascot state="empty" caption="No problems match the selected filter." />
             ) : (
               filteredProblems.map((problem) => (
                 <ProblemCard
                   key={problem.id}
                   problem={problem}
                   isShortlisted={state.shortlist.includes(problem.id)}
-                  onToggleShortlist={(id) =>
-                    dispatch({ type: "TOGGLE_SHORTLIST", problemId: id })
-                  }
+                  onToggleShortlist={(id) => dispatch({ type: "TOGGLE_SHORTLIST", problemId: id })}
                 />
               ))
             )}
           </div>
 
           {/* Proceed */}
-          <div className="flex items-center justify-between mt-8 pt-4 border-t border-border">
-            <p className="text-sm text-muted-foreground">
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            marginTop: "2rem", paddingTop: "1.25rem",
+            borderTop: "0.5px solid var(--border-color)",
+          }}>
+            <p style={{ fontSize: "0.875rem", color: "var(--muted-color)" }}>
               {shortlistCount > 0
                 ? `${shortlistCount} problem${shortlistCount !== 1 ? "s" : ""} shortlisted for export`
                 : "Shortlist problems to include in your export"}
             </p>
-            <Button onClick={handleProceed} size="lg">
+            <button
+              onClick={() => dispatch({ type: "ADVANCE_STAGE", stage: 6 })}
+              className="btn-primary"
+              style={{ padding: "0.75rem 1.5rem", fontSize: "0.9375rem" }}
+            >
               Export Brief
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+              <ArrowRight size={16} />
+            </button>
           </div>
         </div>
       )}

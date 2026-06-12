@@ -1,23 +1,27 @@
 /**
  * DYOR2 — ProblemCard Component
- * Design: Precision Instrument — full problem card
- * Includes: title, tags, difficulty pips, JourneyMap, evidence, solutions, shortlist toggle
+ * Design: DYOR design system — ink/paper, Poppins, flat hairline borders
  */
 
 import React, { useState } from "react";
-import { cn } from "@/lib/utils";
 import type { Problem } from "@/store/reducer";
 import { JourneyMap } from "./JourneyMap";
 import { RegenerateButton } from "./RegenerateButton";
 import { Bookmark, BookmarkCheck, ChevronDown, ChevronUp } from "lucide-react";
 
-const TAG_COLORS: Record<string, string> = {
-  ML: "bg-purple-50 text-purple-700 border-purple-200",
-  API: "bg-blue-50 text-blue-700 border-blue-200",
-  UX: "bg-pink-50 text-pink-700 border-pink-200",
-  systems: "bg-orange-50 text-orange-700 border-orange-200",
-  "data-pipeline": "bg-teal-50 text-teal-700 border-teal-200",
+const TAG_COLORS: Record<string, { bg: string; color: string }> = {
+  ML:              { bg: "color-mix(in srgb, #7c3aed 10%, var(--paper))", color: "#7c3aed" },
+  API:             { bg: "color-mix(in srgb, var(--research-blue) 10%, var(--paper))", color: "var(--research-blue)" },
+  UX:              { bg: "color-mix(in srgb, #db2777 10%, var(--paper))", color: "#db2777" },
+  systems:         { bg: "color-mix(in srgb, #d97706 10%, var(--paper))", color: "#d97706" },
+  "data-pipeline": { bg: "color-mix(in srgb, #0891b2 10%, var(--paper))", color: "#0891b2" },
 };
+
+function difficultyColor(d: number) {
+  if (d >= 4) return "var(--signal-red)";
+  if (d >= 3) return "var(--signal-amber)";
+  return "var(--signal-green)";
+}
 
 interface ProblemCardProps {
   problem: Problem;
@@ -25,99 +29,94 @@ interface ProblemCardProps {
   onToggleShortlist: (id: string) => void;
   onRegenerate?: () => void;
   regenerating?: boolean;
-  className?: string;
 }
 
-export function ProblemCard({
-  problem,
-  isShortlisted,
-  onToggleShortlist,
-  onRegenerate,
-  regenerating = false,
-  className,
-}: ProblemCardProps) {
+export function ProblemCard({ problem, isShortlisted, onToggleShortlist, onRegenerate, regenerating = false }: ProblemCardProps) {
   const [expanded, setExpanded] = useState(true);
+  const pipColor = difficultyColor(problem.difficulty);
 
   return (
     <div
-      className={cn(
-        "border border-border rounded-xl bg-card shadow-sm card-enter",
-        isShortlisted && "ring-2 ring-primary/30 border-primary/40",
-        className
-      )}
+      className="card-enter"
+      style={{
+        border: isShortlisted
+          ? `1.5px solid color-mix(in srgb, var(--research-blue) 50%, transparent)`
+          : "0.5px solid var(--border-color)",
+        borderRadius: "var(--radius)",
+        background: isShortlisted
+          ? "color-mix(in srgb, var(--research-blue) 3%, var(--paper))"
+          : "var(--paper)",
+        overflow: "hidden",
+        transition: "border-color 150ms ease-out, background 150ms ease-out",
+      }}
     >
       {/* Header */}
-      <div className="p-4 pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
+      <div style={{ padding: "1rem 1.125rem 0.875rem" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "0.75rem" }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             {/* Tags */}
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {problem.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className={cn(
-                    "text-[10px] font-semibold px-2 py-0.5 rounded border uppercase tracking-wide",
-                    TAG_COLORS[tag] || "bg-muted text-muted-foreground border-border"
-                  )}
-                >
-                  {tag}
-                </span>
-              ))}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem", marginBottom: "0.5rem" }}>
+              {problem.tags.map((tag) => {
+                const tc = TAG_COLORS[tag] || { bg: "color-mix(in srgb, var(--ink) 6%, var(--paper))", color: "var(--muted-color)" };
+                return (
+                  <span key={tag} style={{
+                    fontFamily: "var(--font-mono)", fontSize: "0.5625rem", fontWeight: 700,
+                    padding: "0.15rem 0.5rem", borderRadius: 4,
+                    background: tc.bg,
+                    border: `0.5px solid color-mix(in srgb, ${tc.color} 25%, transparent)`,
+                    color: tc.color, textTransform: "uppercase", letterSpacing: "0.06em",
+                  }}>
+                    {tag}
+                  </span>
+                );
+              })}
             </div>
-
             {/* Title */}
-            <h3 className="text-base font-semibold text-foreground leading-snug">
+            <h3 style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "1rem", color: "var(--ink)", lineHeight: 1.35 }}>
               {problem.title}
             </h3>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div style={{ display: "flex", alignItems: "center", gap: "0.375rem", flexShrink: 0 }}>
             {/* Difficulty pips */}
-            <div className="flex items-center gap-0.5 mr-1" title={`Difficulty: ${problem.difficulty}/5`}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.2rem", marginRight: "0.25rem" }} title={`Difficulty: ${problem.difficulty}/5`}>
               {Array.from({ length: 5 }).map((_, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "w-2 h-2 rounded-full",
-                    i < problem.difficulty
-                      ? problem.difficulty >= 4
-                        ? "bg-[var(--color-signal-red)]"
-                        : problem.difficulty >= 3
-                        ? "bg-[var(--color-signal-amber)]"
-                        : "bg-[var(--color-signal-green)]"
-                      : "bg-border"
-                  )}
-                />
+                <div key={i} style={{
+                  width: 7, height: 7, borderRadius: "50%",
+                  background: i < problem.difficulty ? pipColor : "var(--border-color)",
+                  transition: "background 150ms ease-out",
+                }} />
               ))}
             </div>
 
             {/* Shortlist toggle */}
             <button
               onClick={() => onToggleShortlist(problem.id)}
-              className={cn(
-                "p-1.5 rounded-md transition-all duration-150 hover:scale-110",
-                isShortlisted
-                  ? "text-primary bg-primary/10"
-                  : "text-muted-foreground hover:text-primary hover:bg-primary/5"
-              )}
               aria-label={isShortlisted ? "Remove from shortlist" : "Add to shortlist"}
-              title={isShortlisted ? "Remove from shortlist" : "Add to shortlist"}
+              style={{
+                padding: "0.3rem", borderRadius: "var(--radius)", border: "none", cursor: "pointer",
+                color: isShortlisted ? "var(--research-blue)" : "var(--muted-color)",
+                background: isShortlisted ? "color-mix(in srgb, var(--research-blue) 10%, transparent)" : "transparent",
+                transition: "all 150ms ease-out",
+              }}
+              onMouseEnter={(e) => { if (!isShortlisted) (e.currentTarget as HTMLButtonElement).style.color = "var(--research-blue)"; }}
+              onMouseLeave={(e) => { if (!isShortlisted) (e.currentTarget as HTMLButtonElement).style.color = "var(--muted-color)"; }}
             >
-              {isShortlisted ? (
-                <BookmarkCheck className="w-4 h-4" />
-              ) : (
-                <Bookmark className="w-4 h-4" />
-              )}
+              {isShortlisted ? <BookmarkCheck size={15} /> : <Bookmark size={15} />}
             </button>
 
             {/* Expand/collapse */}
             <button
               onClick={() => setExpanded(!expanded)}
-              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150"
-              aria-label={expanded ? "Collapse" : "Expand"}
+              style={{
+                padding: "0.3rem", borderRadius: "var(--radius)", background: "none", border: "none", cursor: "pointer",
+                color: "var(--muted-color)", transition: "color 150ms ease-out",
+              }}
+              onMouseEnter={(e) => (e.currentTarget as HTMLButtonElement).style.color = "var(--ink)"}
+              onMouseLeave={(e) => (e.currentTarget as HTMLButtonElement).style.color = "var(--muted-color)"}
             >
-              {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
             </button>
           </div>
         </div>
@@ -125,28 +124,27 @@ export function ProblemCard({
 
       {/* Expandable content */}
       {expanded && (
-        <div className="px-4 pb-4 space-y-4 border-t border-border/50 pt-3">
+        <div style={{ borderTop: "0.5px solid var(--border-color)", padding: "1rem 1.125rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
           {/* Journey Map */}
           <div>
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-              Customer Journey
-            </h4>
+            <h4 className="stage-label" style={{ marginBottom: "0.5rem" }}>Customer Journey</h4>
             <JourneyMap steps={problem.journeySteps} />
           </div>
 
           {/* Evidence */}
           <div>
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-              Evidence
-            </h4>
-            <p className="text-sm text-foreground leading-relaxed">{problem.evidenceSummary}</p>
+            <h4 className="stage-label" style={{ marginBottom: "0.375rem" }}>Evidence</h4>
+            <p style={{ fontSize: "0.875rem", color: "var(--ink)", lineHeight: 1.6 }}>{problem.evidenceSummary}</p>
             {problem.sourceIds && problem.sourceIds.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem", marginTop: "0.5rem" }}>
                 {problem.sourceIds.map((id) => (
-                  <span
-                    key={id}
-                    className="font-mono text-xs px-1.5 py-0.5 bg-muted rounded text-muted-foreground"
-                  >
+                  <span key={id} style={{
+                    fontFamily: "var(--font-mono)", fontSize: "0.5625rem", fontWeight: 600,
+                    padding: "0.15rem 0.4rem",
+                    background: "color-mix(in srgb, var(--ink) 6%, var(--paper))",
+                    border: "0.5px solid var(--border-color)",
+                    borderRadius: 4, color: "var(--muted-color)",
+                  }}>
                     {id}
                   </span>
                 ))}
@@ -157,26 +155,28 @@ export function ProblemCard({
           {/* Solutions */}
           {problem.solutions && problem.solutions.length > 0 && (
             <div>
-              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                Proposed Solutions
-              </h4>
-              <div className="space-y-2">
+              <h4 className="stage-label" style={{ marginBottom: "0.5rem" }}>Proposed Solutions</h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 {problem.solutions.map((sol, idx) => (
-                  <div
-                    key={idx}
-                    className="border border-border rounded-lg p-3 bg-muted/20"
-                  >
-                    <p className="text-sm font-semibold text-foreground mb-1">{sol.title}</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed mb-2">
+                  <div key={idx} style={{
+                    border: "0.5px solid var(--border-color)", borderRadius: "var(--radius)",
+                    padding: "0.75rem 0.875rem",
+                    background: "color-mix(in srgb, var(--ink) 2%, var(--paper))",
+                  }}>
+                    <p style={{ fontWeight: 600, fontSize: "0.875rem", color: "var(--ink)", marginBottom: "0.25rem" }}>{sol.title}</p>
+                    <p style={{ fontSize: "0.8125rem", color: "var(--muted-color)", lineHeight: 1.5, marginBottom: sol.stack?.length ? "0.5rem" : 0 }}>
                       {sol.description}
                     </p>
                     {sol.stack && sol.stack.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem" }}>
                         {sol.stack.map((tech) => (
-                          <span
-                            key={tech}
-                            className="font-mono text-[10px] px-1.5 py-0.5 bg-background border border-border rounded text-muted-foreground"
-                          >
+                          <span key={tech} style={{
+                            fontFamily: "var(--font-mono)", fontSize: "0.5625rem", fontWeight: 600,
+                            padding: "0.15rem 0.4rem",
+                            background: "var(--paper)",
+                            border: "0.5px solid var(--border-color)",
+                            borderRadius: 4, color: "var(--muted-color)",
+                          }}>
                             {tech}
                           </span>
                         ))}
@@ -190,12 +190,8 @@ export function ProblemCard({
 
           {/* Regenerate */}
           {onRegenerate && (
-            <div className="flex justify-end pt-1">
-              <RegenerateButton
-                onClick={onRegenerate}
-                loading={regenerating}
-                label="Regenerate this problem"
-              />
+            <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: "0.25rem" }}>
+              <RegenerateButton onClick={onRegenerate} loading={regenerating} label="Regenerate this problem" />
             </div>
           )}
         </div>

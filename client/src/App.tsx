@@ -1,7 +1,7 @@
 /**
  * DYOR2 — App.tsx
- * Design: Precision Instrument — warm white, deep ink, blue primary
- * Routes: stage-based pipeline navigation managed by AppContext
+ * Design: DYOR design system — ink/paper, Poppins, flat hairline borders
+ * Routes: 6-stage pipeline managed by AppContext
  */
 
 import { Toaster } from "@/components/ui/sonner";
@@ -16,68 +16,74 @@ import SynthesisPage from "./pages/SynthesisPage";
 import ProblemsPage from "./pages/ProblemsPage";
 import ExportPage from "./pages/ExportPage";
 import ErrorBoundary from "./components/ErrorBoundary";
-import "./styles/print.css";
 
+// Stage routing: 1=Intake, 2=Research, 3=Checkpoint, 4=Synthesis, 5=Problems, 6=Export
 function PipelineRouter() {
   const { state, dispatch } = useApp();
+
   function handleStageNav(stage: number) {
-    // Only allow navigating to completed stages
+    // Only allow navigating back to already-visited stages
     if (stage < state.currentStage) {
-      dispatch({ type: "ADVANCE_STAGE", stage: stage as 1 | 2 | 3 | 4 | 5 });
+      dispatch({ type: "ADVANCE_STAGE", stage: stage as 1 | 2 | 3 | 4 | 5 | 6 });
     }
   }
 
   const renderStage = () => {
     switch (state.currentStage) {
-      case 1:
-        return <IntakePage />;
-      case 2:
-        return <ResearchPage />;
-      case 3:
-        return <CheckpointPage />;
-      case 4:
-        return <SynthesisPage />;
-      case 5:
-        return state.problemSet ? <ExportPage /> : <ProblemsPage />;
-      default:
-        return <IntakePage />;
+      case 1: return <IntakePage />;
+      case 2: return <ResearchPage />;
+      case 3: return <CheckpointPage />;
+      case 4: return <SynthesisPage />;
+      case 5: return <ProblemsPage />;
+      case 6: return <ExportPage />;
+      default: return <IntakePage />;
     }
   };
 
-  // Determine which "visual" stage to show in nav
-  // Stage 5 covers both ProblemsPage and ExportPage
-  const navStage = state.currentStage === 5 && state.problemSet ? 5 : state.currentStage;
-
-  // make sure to consider if you need authentication for certain routes
   return (
-    <div className="min-h-screen bg-background">
-      {/* Stage navigation */}
-      <StageNav
-        currentStage={navStage}
-        onStageClick={handleStageNav}
-        className="no-print"
-      />
+    <div style={{ minHeight: "100vh", background: "var(--surface)" }}>
+      {/* Top nav — hidden on print */}
+      <div className="no-print">
+        <StageNav
+          currentStage={state.currentStage}
+          onStageClick={handleStageNav}
+        />
 
-      {/* Page header with company name */}
-      {state.companyName && (
-        <div className="no-print border-b border-border/50 bg-background/80 backdrop-blur-sm">
-          <div className="max-w-5xl mx-auto px-4 py-2 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-muted-foreground">Analysing</span>
-              <span className="text-sm font-semibold text-foreground">{state.companyName}</span>
+        {/* Company context strip */}
+        {state.companyName && (
+          <div style={{
+            borderBottom: "0.5px solid var(--border-color)",
+            background: "color-mix(in srgb, var(--paper) 85%, var(--surface))",
+          }}>
+            <div style={{ maxWidth: 900, margin: "0 auto", padding: "0.5rem 1.5rem", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.625rem", fontWeight: 600, color: "var(--muted-color)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  Analysing
+                </span>
+                <span style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: "0.875rem", color: "var(--ink)" }}>
+                  {state.companyName}
+                </span>
+              </div>
+              <button
+                onClick={() => dispatch({ type: "RESET" })}
+                style={{
+                  fontFamily: "var(--font-mono)", fontSize: "0.625rem", fontWeight: 600,
+                  color: "var(--muted-color)", background: "none", border: "none", cursor: "pointer",
+                  textTransform: "uppercase", letterSpacing: "0.08em",
+                  transition: "color 150ms ease-out",
+                }}
+                onMouseEnter={(e) => (e.currentTarget as HTMLButtonElement).style.color = "var(--signal-red)"}
+                onMouseLeave={(e) => (e.currentTarget as HTMLButtonElement).style.color = "var(--muted-color)"}
+              >
+                Start Over
+              </button>
             </div>
-            <button
-              onClick={() => dispatch({ type: "RESET" })}
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Start over
-            </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Main content */}
-      <main className="container py-2">
+      <main style={{ maxWidth: 900, margin: "0 auto", padding: "0 1.5rem 4rem" }}>
         {renderStage()}
       </main>
     </div>
