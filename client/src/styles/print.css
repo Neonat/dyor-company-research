@@ -1,0 +1,185 @@
+/**
+ * DYOR2 — Print Stylesheet
+ * Analyst brief layout — looks like a professional document, not a browser printout.
+ * Hides nav, buttons, filter bars. Shows: company name, date, scorecard, problems, sources.
+ */
+
+@media print {
+  /* ── Reset ── */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  @page {
+    margin: 2cm 2.5cm;
+    size: A4 portrait;
+  }
+
+  body {
+    font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 10pt;
+    line-height: 1.5;
+    color: #1a1a2e;
+    background: white;
+  }
+
+  /* ── Hide everything except print brief ── */
+  .no-print,
+  nav,
+  header,
+  button,
+  [role="navigation"],
+  [data-radix-popper-content-wrapper],
+  .stage-nav {
+    display: none !important;
+  }
+
+  /* ── Show print-only content ── */
+  .print-only {
+    display: block !important;
+  }
+
+  /* ── Header ── */
+  .print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 2px solid #1a1a2e;
+    padding-bottom: 12pt;
+    margin-bottom: 20pt;
+  }
+
+  .print-company {
+    font-family: 'Outfit', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 22pt;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 4pt 0;
+  }
+
+  .print-subtitle {
+    font-size: 10pt;
+    color: #6b7280;
+    margin: 0;
+  }
+
+  .print-meta {
+    text-align: right;
+    font-size: 9pt;
+    color: #6b7280;
+    line-height: 1.6;
+  }
+
+  /* ── Section titles ── */
+  .print-section-title {
+    font-family: 'Outfit', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 13pt;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 18pt 0 8pt 0;
+    padding-bottom: 4pt;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  /* ── Signal cards ── */
+  .print-signal {
+    padding: 6pt 8pt;
+    margin-bottom: 4pt;
+    border-left: 3pt solid #e5e7eb;
+    font-size: 9.5pt;
+    line-height: 1.4;
+    page-break-inside: avoid;
+  }
+
+  .print-signal-green {
+    border-left-color: #16a34a;
+    background: #f0fdf4;
+  }
+
+  .print-signal-amber {
+    border-left-color: #d97706;
+    background: #fffbeb;
+  }
+
+  .print-signal-red {
+    border-left-color: #dc2626;
+    background: #fef2f2;
+  }
+
+  /* ── Lists ── */
+  .print-list {
+    margin: 0;
+    padding-left: 16pt;
+    font-size: 9.5pt;
+  }
+
+  .print-list li {
+    margin-bottom: 3pt;
+    line-height: 1.4;
+  }
+
+  /* ── Problem blocks ── */
+  .print-problem {
+    margin-bottom: 16pt;
+    page-break-inside: avoid;
+  }
+
+  .print-problem-title {
+    font-family: 'Outfit', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 11pt;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0 0 4pt 0;
+  }
+
+  .print-evidence {
+    font-size: 9.5pt;
+    color: #374151;
+    line-height: 1.5;
+    margin: 0 0 6pt 0;
+  }
+
+  .print-solution {
+    font-size: 9pt;
+    color: #6b7280;
+    margin-bottom: 3pt;
+    padding-left: 8pt;
+    border-left: 1pt solid #e5e7eb;
+  }
+
+  /* ── Sources ── */
+  .print-sources {
+    font-size: 8.5pt;
+    color: #6b7280;
+  }
+
+  .print-source {
+    margin-bottom: 4pt;
+    line-height: 1.4;
+    word-break: break-all;
+  }
+
+  .print-source-id {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 8pt;
+    color: #9ca3af;
+  }
+
+  /* ── Page breaks ── */
+  .print-problem {
+    page-break-inside: avoid;
+  }
+
+  .print-sources {
+    page-break-before: auto;
+  }
+}
+
+/* Hide print-only content on screen */
+@media screen {
+  .print-only {
+    display: none;
+  }
+}
