@@ -87,7 +87,12 @@ export interface ProblemSet {
 // ─── App State ───────────────────────────────────────────────────────────────
 
 export interface AppState {
+  // Landing / demo gate
+  showLanding: boolean;
+  exaApiKey: string;
+  // Pipeline
   companyName: string;
+  companyLogoUrl: string | null;
   role: string;
   currentStage: 1 | 2 | 3 | 4 | 5 | 6;
   intakeBrief: IntakeBrief | null;
@@ -102,7 +107,10 @@ export interface AppState {
 }
 
 export const initialState: AppState = {
+  showLanding: true,
+  exaApiKey: "",
   companyName: "",
+  companyLogoUrl: null,
   role: "",
   currentStage: 1,
   intakeBrief: null,
@@ -119,7 +127,9 @@ export const initialState: AppState = {
 // ─── Actions ─────────────────────────────────────────────────────────────────
 
 export type AppAction =
+  | { type: "LAUNCH_DEMO"; exaApiKey: string }
   | { type: "SET_INTAKE"; companyName: string; role: string }
+  | { type: "SET_COMPANY_LOGO"; url: string | null }
   | { type: "SET_INTAKE_BRIEF"; brief: IntakeBrief }
   | { type: "SET_EXA_PROMPTS"; prompts: ExaPromptSet }
   | { type: "UPDATE_EXA_PROMPT"; id: string; query: string }
@@ -138,8 +148,14 @@ export type AppAction =
 
 export function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
+    case "LAUNCH_DEMO":
+      return { ...state, showLanding: false, exaApiKey: action.exaApiKey };
+
     case "SET_INTAKE":
       return { ...state, companyName: action.companyName, role: action.role };
+
+    case "SET_COMPANY_LOGO":
+      return { ...state, companyLogoUrl: action.url };
 
     case "SET_INTAKE_BRIEF":
       return { ...state, intakeBrief: action.brief, loadingSection: null, errorSection: null };
@@ -187,7 +203,6 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       const shortlist = inList
         ? state.shortlist.filter((id) => id !== action.problemId)
         : [...state.shortlist, action.problemId];
-      // Persist to localStorage
       try { localStorage.setItem("dyor2_shortlist", JSON.stringify(shortlist)); } catch {}
       return { ...state, shortlist };
     }
@@ -207,7 +222,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, currentStage: action.stage };
 
     case "RESET":
-      return { ...initialState };
+      return { ...initialState, showLanding: false, exaApiKey: state.exaApiKey };
 
     default:
       return state;

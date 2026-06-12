@@ -1,14 +1,18 @@
-import React from "react";
+/**
+ * DYOR2 — StageNav
+ * Fluid loading bar with animated fill, replacing the old circle nodes.
+ * Shows stage labels below the bar with the current stage highlighted.
+ */
+
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
 
 const STAGES = [
-  { id: 1, label: "Intake",      short: "01" },
-  { id: 2, label: "Research",    short: "02" },
-  { id: 3, label: "Checkpoint",  short: "03" },
-  { id: 4, label: "Synthesis",   short: "04" },
-  { id: 5, label: "Problems",    short: "05" },
-  { id: 6, label: "Export",      short: "06" },
+  { id: 1, label: "Intake" },
+  { id: 2, label: "Research" },
+  { id: 3, label: "Checkpoint" },
+  { id: 4, label: "Synthesis" },
+  { id: 5, label: "Problems" },
+  { id: 6, label: "Export" },
 ];
 
 interface StageNavProps {
@@ -18,6 +22,9 @@ interface StageNavProps {
 }
 
 export function StageNav({ currentStage, onStageClick, className }: StageNavProps) {
+  // Progress: each stage fills 1/6 of the bar. Current stage fills halfway.
+  const progressPercent = ((currentStage - 1) / 6) * 100 + (1 / 6) * 50;
+
   return (
     <nav
       className={cn("no-print sticky top-0 z-40", className)}
@@ -27,93 +34,105 @@ export function StageNav({ currentStage, onStageClick, className }: StageNavProp
         borderBottom: "0.5px solid var(--border-color)",
       }}
     >
-      <div style={{ maxWidth: 960, margin: "0 auto", padding: "0.75rem 1.5rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
-          {/* Wordmark */}
+      <div style={{ maxWidth: 960, margin: "0 auto", padding: "1rem 1.5rem 0.75rem" }}>
+        {/* Wordmark + progress bar */}
+        <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", marginBottom: "0.6rem" }}>
           <span
-            className="dyor-wordmark"
-            style={{ fontSize: "1rem", letterSpacing: "0.1em", flexShrink: 0 }}
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "0.9rem",
+              fontWeight: 700,
+              letterSpacing: "0.12em",
+              color: "var(--ink)",
+              flexShrink: 0,
+            }}
           >
             DYOR
           </span>
 
-          {/* Stages */}
-          <div style={{ display: "flex", alignItems: "center", flex: 1 }}>
-            {STAGES.map((stage, idx) => {
-              const isCompleted = stage.id < currentStage;
-              const isCurrent   = stage.id === currentStage;
-              const isLocked    = stage.id > currentStage;
-              const isClickable = onStageClick && (isCompleted || isCurrent);
-              const isLast      = idx === STAGES.length - 1;
-
-              return (
-                <React.Fragment key={stage.id}>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.2rem" }}>
-                    <button
-                      onClick={() => isClickable && onStageClick!(stage.id)}
-                      disabled={isLocked}
-                      aria-current={isCurrent ? "step" : undefined}
-                      aria-label={`Stage ${stage.id}: ${stage.label}`}
-                      style={{
-                        width: "2rem",
-                        height: "2rem",
-                        borderRadius: "50%",
-                        border: isCompleted || isCurrent
-                          ? "1.5px solid var(--ink)"
-                          : "1.5px solid var(--border-color)",
-                        background: isCompleted || isCurrent ? "var(--ink)" : "var(--paper)",
-                        color: isCompleted || isCurrent ? "var(--paper)" : "var(--muted-color)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        cursor: isLocked ? "default" : "pointer",
-                        transition: "all 200ms cubic-bezier(0.23,1,0.32,1)",
-                        transform: isCurrent ? "scale(1.1)" : "scale(1)",
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "0.625rem",
-                        fontWeight: 600,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {isCompleted ? <Check size={11} strokeWidth={2.5} /> : stage.short}
-                    </button>
-                    <span
-                      style={{
-                        fontFamily: "var(--font-body)",
-                        fontSize: "0.625rem",
-                        fontWeight: isCurrent ? 600 : 400,
-                        color: isCurrent
-                          ? "var(--ink)"
-                          : isCompleted
-                          ? "var(--ink)"
-                          : "var(--muted-color)",
-                        whiteSpace: "nowrap",
-                        letterSpacing: "0.01em",
-                      }}
-                      className="hidden sm:block"
-                    >
-                      {stage.label}
-                    </span>
-                  </div>
-
-                  {/* Connector */}
-                  {!isLast && (
-                    <div
-                      style={{
-                        flex: 1,
-                        height: "0.5px",
-                        background: isCompleted ? "var(--ink)" : "var(--border-color)",
-                        marginBottom: "1rem",
-                        minWidth: "0.5rem",
-                      }}
-                    />
-                  )}
-                </React.Fragment>
-              );
-            })}
+          {/* Fluid progress bar */}
+          <div
+            style={{
+              flex: 1,
+              height: 6,
+              borderRadius: 3,
+              background: "var(--border-color)",
+              overflow: "hidden",
+              position: "relative",
+            }}
+          >
+            <div
+              style={{
+                height: "100%",
+                borderRadius: 3,
+                background: "linear-gradient(90deg, var(--research-blue), var(--ink))",
+                width: `${progressPercent}%`,
+                transition: "width 600ms cubic-bezier(0.23, 1, 0.32, 1)",
+                position: "relative",
+              }}
+            >
+              {/* Shimmer animation overlay */}
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  borderRadius: 3,
+                  background: "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)",
+                  animation: "shimmer 2s infinite",
+                }}
+              />
+            </div>
           </div>
+
+          {/* Stage fraction */}
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", color: "var(--muted-color)", flexShrink: 0 }}>
+            {currentStage}/6
+          </span>
+        </div>
+
+        {/* Stage labels */}
+        <div style={{ display: "flex", justifyContent: "space-between", paddingLeft: "3.5rem" }}>
+          {STAGES.map((stage) => {
+            const isCompleted = stage.id < currentStage;
+            const isCurrent = stage.id === currentStage;
+            const isClickable = onStageClick && isCompleted;
+
+            return (
+              <button
+                key={stage.id}
+                onClick={() => isClickable && onStageClick!(stage.id)}
+                disabled={!isClickable}
+                style={{
+                  fontFamily: "var(--font-body)",
+                  fontSize: "0.65rem",
+                  fontWeight: isCurrent ? 600 : 400,
+                  color: isCurrent ? "var(--ink)" : isCompleted ? "var(--research-blue)" : "var(--muted-color)",
+                  background: "none",
+                  border: "none",
+                  cursor: isClickable ? "pointer" : "default",
+                  padding: "0.15rem 0.25rem",
+                  borderRadius: "var(--radius-sm)",
+                  transition: "color 150ms ease-out",
+                  textDecoration: isClickable ? "none" : "none",
+                  whiteSpace: "nowrap",
+                }}
+                onMouseEnter={(e) => { if (isClickable) (e.currentTarget as HTMLButtonElement).style.color = "var(--ink)"; }}
+                onMouseLeave={(e) => { if (isClickable) (e.currentTarget as HTMLButtonElement).style.color = "var(--research-blue)"; }}
+              >
+                {stage.label}
+              </button>
+            );
+          })}
         </div>
       </div>
+
+      {/* Shimmer keyframe */}
+      <style>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(200%); }
+        }
+      `}</style>
     </nav>
   );
 }

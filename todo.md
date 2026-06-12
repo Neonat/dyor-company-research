@@ -69,3 +69,15 @@
 - [x] Rewrite all shared components (SignalCard, SourceChip, ProblemCard, JourneyMap, RegenerateButton)
 - [x] Update App.tsx with DYOR layout and company context strip
 - [x] All 8 tests still passing after redesign
+
+## UX Overhaul (Polish Pass)
+
+- [x] Landing page: hero section with headline + subhead
+- [x] Landing page: use cases section (3-4 cards)
+- [x] Landing page: origin story / where the idea came from section
+- [x] Landing page: demo CTA button that triggers API key modal
+- [x] API key modal: ask for Exa API key before launching pipeline
+- [x] Replace circle stage nav with fluid loading bar (animated fill + shimmer)
+- [x] Company logo context strip below progress bar (appears after Stage 1, Clearbit logo fetch)
+- [x] Duck-inspecting-logo loading animation for all loading states
+- [x] Polish page transitions and micro-interactions

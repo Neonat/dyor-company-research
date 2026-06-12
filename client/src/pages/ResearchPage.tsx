@@ -23,10 +23,11 @@ export default function ResearchPage() {
   const { state, dispatch } = useApp();
   const [editingPromptId, setEditingPromptId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
-  const [exaApiKey, setExaApiKey] = useState(() => {
-    try { return localStorage.getItem("dyor2_exa_key") || ""; } catch { return ""; }
-  });
+  // Use exaApiKey from global state (set during landing page API key modal)
+  const exaApiKey = state.exaApiKey || (() => { try { return localStorage.getItem("dyor2_exa_key") || ""; } catch { return ""; } })();
   const [showKeyInput, setShowKeyInput] = useState(false);
+  // Local setter for inline key editing (fallback if user wants to change key)
+  const [localExaKey, setLocalExaKey] = useState(exaApiKey);
 
   const hasPrompts      = !!state.exaPrompts && state.exaPrompts.prompts.length > 0;
   const hasSources      = state.researchSources.length > 0;
@@ -66,13 +67,14 @@ export default function ResearchPage() {
   }
 
   function runSearch() {
-    if (!state.exaPrompts || !exaApiKey.trim()) return;
-    try { localStorage.setItem("dyor2_exa_key", exaApiKey); } catch {}
+    const key = localExaKey || exaApiKey;
+    if (!state.exaPrompts || !key.trim()) return;
+    try { localStorage.setItem("dyor2_exa_key", key); } catch {}
     dispatch({ type: "SET_RESEARCH_SOURCES", sources: [] });
     dispatch({ type: "SET_LOADING", section: "research-search" });
     runExaSearchMutation.mutate({
       prompts: state.exaPrompts.prompts.map((p) => ({ id: p.id, query: p.query })),
-      exaApiKey: exaApiKey.trim(),
+      exaApiKey: key.trim(),
     });
   }
 
@@ -214,8 +216,8 @@ export default function ResearchPage() {
             <div style={{ marginBottom: "0.75rem" }}>
               <input
                 type="password"
-                value={exaApiKey}
-                onChange={(e) => setExaApiKey(e.target.value)}
+                value={localExaKey}
+                onChange={(e) => setLocalExaKey(e.target.value)}
                 placeholder="exa_xxxxxxxxxxxxxxxxxxxxxxxx"
                 className="dyor-input"
                 style={{ fontFamily: "var(--font-mono)", fontSize: "0.8125rem" }}

@@ -21,9 +21,17 @@ function loadFromStorage(): Partial<AppState> {
 
 function buildInitialState(): AppState {
   const saved = loadFromStorage();
+  // Also check for saved Exa key
+  const savedExaKey = (() => {
+    try { return localStorage.getItem("dyor2_exa_key") || ""; } catch { return ""; }
+  })();
+
   return {
     ...initialState,
+    showLanding: saved.showLanding ?? initialState.showLanding,
+    exaApiKey: savedExaKey || saved.exaApiKey || initialState.exaApiKey,
     companyName: saved.companyName ?? initialState.companyName,
+    companyLogoUrl: saved.companyLogoUrl ?? null,
     role: saved.role ?? initialState.role,
     currentStage: saved.currentStage ?? initialState.currentStage,
     intakeBrief: saved.intakeBrief ?? null,
@@ -54,6 +62,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { loadingSection: _l, errorSection: _e, errorMessage: _m, ...persistable } = state;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(persistable));
+      // Also keep exa key in its own slot for backward compat
+      if (state.exaApiKey) {
+        localStorage.setItem("dyor2_exa_key", state.exaApiKey);
+      }
     } catch {
       // Quota exceeded — ignore
     }
