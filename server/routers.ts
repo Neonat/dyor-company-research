@@ -96,19 +96,39 @@ const ProblemSetSchema = z.object({
 // ─── LLM helper ──────────────────────────────────────────────────────────────
 
 function extractOutermostJson(text: string): unknown | null {
-  const start = text.indexOf("{");
-  if (start === -1) return null;
-  let depth = 0;
-  let end = -1;
-  for (let i = start; i < text.length; i++) {
-    if (text[i] === "{") depth++;
-    else if (text[i] === "}") {
-      depth--;
-      if (depth === 0) { end = i; break; }
+  // Try to find outermost { ... }
+  const objStart = text.indexOf("{");
+  if (objStart !== -1) {
+    let depth = 0;
+    let end = -1;
+    for (let i = objStart; i < text.length; i++) {
+      if (text[i] === "{") depth++;
+      else if (text[i] === "}") {
+        depth--;
+        if (depth === 0) { end = i; break; }
+      }
+    }
+    if (end !== -1) {
+      try { return JSON.parse(text.slice(objStart, end + 1)); } catch { /* fall through */ }
     }
   }
-  if (end === -1) return null;
-  try { return JSON.parse(text.slice(start, end + 1)); } catch { return null; }
+  // Also try to find outermost [ ... ] (bare array)
+  const arrStart = text.indexOf("[");
+  if (arrStart !== -1) {
+    let depth = 0;
+    let end = -1;
+    for (let i = arrStart; i < text.length; i++) {
+      if (text[i] === "[") depth++;
+      else if (text[i] === "]") {
+        depth--;
+        if (depth === 0) { end = i; break; }
+      }
+    }
+    if (end !== -1) {
+      try { return JSON.parse(text.slice(arrStart, end + 1)); } catch { /* fall through */ }
+    }
+  }
+  return null;
 }
 
 /** Unwrap a parsed JSON value ONLY if it is wrapped in a key that exactly matches the toolName.
@@ -146,14 +166,41 @@ async function callLLMStructured<T>(
     response_format: { type: "json_object" },
   });
 
+  console.log(`[DYOR] callLLMStructured(${toolName}) - response keys:`, Object.keys(response || {}));
+
   // Extract content from choices[0].message
   const msg = response.choices?.[0]?.message;
-  const rawContent = msg ? (typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content)) : "";
+  let rawContent = "";
+
+  if (msg) {
+    if (typeof msg.content === "string") {
+      rawContent = msg.content;
+    } else if (Array.isArray(msg.content)) {
+      // Anthropic content-block format: [{type:"text", text:"..."}]
+      const textBlock = (msg.content as any[]).find((b: any) => b.type === "text");
+      rawContent = textBlock?.text || JSON.stringify(msg.content);
+    } else if (msg.content) {
+      rawContent = JSON.stringify(msg.content);
+    }
+  }
+
+  // Also try Anthropic native format (response.content directly)
+  if (!rawContent && (response as any).content) {
+    const content = (response as any).content;
+    if (typeof content === "string") rawContent = content;
+    else if (Array.isArray(content)) {
+      const textBlock = content.find((b: any) => b.type === "text");
+      rawContent = textBlock?.text || JSON.stringify(content);
+    }
+  }
+
+  console.log(`[DYOR] callLLMStructured(${toolName}) - rawContent (first 500):`, rawContent.slice(0, 500));
 
   // Also check tool_calls in case the model used them anyway
   const toolCall = msg ? (msg as any).tool_calls?.[0] : undefined;
   if (toolCall?.function?.arguments) {
     const parsed = JSON.parse(toolCall.function.arguments);
+    console.log(`[DYOR] callLLMStructured(${toolName}) - parsed from tool_call`);
     return unwrapIfNamed(parsed, toolName) as T;
   }
 
@@ -161,20 +208,27 @@ async function callLLMStructured<T>(
     // Try direct parse
     try {
       const parsed = JSON.parse(rawContent);
+      console.log(`[DYOR] callLLMStructured(${toolName}) - direct JSON.parse success, keys:`, Object.keys(parsed || {}));
       return unwrapIfNamed(parsed, toolName) as T;
     } catch { /* fall through */ }
 
-    // Try extracting outermost JSON object
+    // Try extracting outermost JSON object/array
     const extracted = extractOutermostJson(rawContent);
-    if (extracted) return unwrapIfNamed(extracted, toolName) as T;
+    if (extracted) {
+      console.log(`[DYOR] callLLMStructured(${toolName}) - extracted JSON, type:`, Array.isArray(extracted) ? "array" : typeof extracted);
+      return unwrapIfNamed(extracted, toolName) as T;
+    }
   }
 
   // Last resort: scan entire raw response string
   const rawText = JSON.stringify(response);
   const extracted = extractOutermostJson(rawText);
-  if (extracted) return unwrapIfNamed(extracted, toolName) as T;
+  if (extracted) {
+    console.log(`[DYOR] callLLMStructured(${toolName}) - extracted from raw response`);
+    return unwrapIfNamed(extracted, toolName) as T;
+  }
 
-  console.error("[DYOR] LLM raw response:", JSON.stringify(response).slice(0, 3000));
+  console.error("[DYOR] LLM raw response:", rawText.slice(0, 3000));
   throw new Error(`No structured JSON in LLM response (tool: ${toolName})`);
 }
 
@@ -571,9 +625,44 @@ Call return_problem_set with 3-5 scoped problem statements. Each must have journ
             additionalProperties: false,
           }
         );
-        // Safety: if LLM returned a bare array instead of {problems:[...]}, wrap it
-        const safeRaw = Array.isArray((raw as any)) ? { problems: raw } : raw;
-        return ProblemSetSchema.parse(safeRaw);
+        // Robust normalization: handle all possible LLM response shapes
+        let normalized: any = raw;
+
+        // Case 1: bare array → wrap it
+        if (Array.isArray(normalized)) {
+          normalized = { problems: normalized };
+        }
+
+        // Case 2: object without "problems" key — try to find it
+        if (normalized && typeof normalized === "object" && !Array.isArray(normalized) && !("problems" in normalized)) {
+          const keys = Object.keys(normalized);
+          // If single key wraps an array, treat that as problems
+          if (keys.length === 1 && Array.isArray(normalized[keys[0]])) {
+            normalized = { problems: normalized[keys[0]] };
+          }
+          // If single key wraps an object with "problems", dig in
+          else if (keys.length === 1 && normalized[keys[0]] && typeof normalized[keys[0]] === "object" && "problems" in normalized[keys[0]]) {
+            normalized = normalized[keys[0]];
+          }
+          // Deep scan: look for any nested key that is an array of objects with "id" and "title"
+          else {
+            for (const key of keys) {
+              const val = normalized[key];
+              if (Array.isArray(val) && val.length > 0 && val[0]?.id && val[0]?.title) {
+                normalized = { problems: val };
+                break;
+              }
+            }
+          }
+        }
+
+        // Case 3: problems exists but is nested one level deep
+        if (normalized?.problems && typeof normalized.problems === "object" && !Array.isArray(normalized.problems) && "problems" in normalized.problems) {
+          normalized = normalized.problems;
+        }
+
+        console.log("[DYOR] Problems normalized:", JSON.stringify(normalized).slice(0, 500));
+        return ProblemSetSchema.parse(normalized);
       }),
 
     // Logo fetch — tries multiple providers server-side to avoid CORS

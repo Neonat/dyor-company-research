@@ -88,3 +88,9 @@
 - [x] Landing page too verbose — made more concise (hero + 6-step + one-sentence origin)
 - [x] Company logo not displaying (switched to server-side multi-provider: Google Favicons → Clearbit → DuckDuckGo)
 - [x] Crop duck assets from user sprite sheet and use as mascot images
+
+## Bug Fixes & Features (Round 3)
+
+- [x] Set DYOR duck logo as official app logo (landing page + StageNav)
+- [x] Checkpoint page: add trash button to permanently remove sources from analysis
+- [x] Fix: Problems generation — robust normalization handles bare arrays, wrapped objects, nested keys, and Anthropic content-block format

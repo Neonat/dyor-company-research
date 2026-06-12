@@ -93,6 +93,7 @@ export default function CheckpointPage() {
                 key={source.id}
                 source={source}
                 onToggle={(id) => dispatch({ type: "TOGGLE_SOURCE_APPROVAL", id })}
+                onRemove={(id) => dispatch({ type: "REMOVE_SOURCE", id })}
               />
             ))}
           </div>
@@ -112,6 +113,7 @@ export default function CheckpointPage() {
                 key={source.id}
                 source={source}
                 onToggle={(id) => dispatch({ type: "TOGGLE_SOURCE_APPROVAL", id })}
+                onRemove={(id) => dispatch({ type: "REMOVE_SOURCE", id })}
               />
             ))}
           </div>

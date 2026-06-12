@@ -136,6 +136,7 @@ export type AppAction =
   | { type: "SET_RESEARCH_SOURCES"; sources: SourceObject[] }
   | { type: "APPEND_RESEARCH_SOURCES"; sources: SourceObject[] }
   | { type: "TOGGLE_SOURCE_APPROVAL"; id: string }
+  | { type: "REMOVE_SOURCE"; id: string }
   | { type: "SET_SYNTHESIS_REPORT"; report: SynthesisReport }
   | { type: "SET_PROBLEM_SET"; problemSet: ProblemSet }
   | { type: "TOGGLE_SHORTLIST"; problemId: string }
@@ -190,6 +191,12 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         researchSources: state.researchSources.map((s) =>
           s.id === action.id ? { ...s, approved: !s.approved } : s
         ),
+      };
+
+    case "REMOVE_SOURCE":
+      return {
+        ...state,
+        researchSources: state.researchSources.filter((s) => s.id !== action.id),
       };
 
     case "SET_SYNTHESIS_REPORT":

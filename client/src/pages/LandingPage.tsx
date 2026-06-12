@@ -7,7 +7,7 @@ import { useState } from "react";
 import { useApp } from "@/store/AppContext";
 import { ArrowRight, Key } from "lucide-react";
 
-const DUCK_HERO = "/manus-storage/duck_8_b98740f5.png";
+const DYOR_LOGO = "/manus-storage/dyor-logo_57f1e2fd.jpg";
 
 export default function LandingPage() {
   const { dispatch } = useApp();
@@ -31,9 +31,9 @@ export default function LandingPage() {
       <section style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "4rem 1.5rem 2rem" }}>
         <div style={{ maxWidth: 560, textAlign: "center" }}>
           <img
-            src={DUCK_HERO}
+            src={DYOR_LOGO}
             alt="DYOR Detective Duck"
-            style={{ width: 80, height: 80, margin: "0 auto 1.25rem", objectFit: "contain" }}
+            style={{ width: 140, height: 140, margin: "0 auto 1.5rem", objectFit: "contain", borderRadius: "var(--radius-lg)" }}
           />
           <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 700, color: "var(--ink)", lineHeight: 1.15, marginBottom: "0.75rem" }}>
             Do Your Own Research

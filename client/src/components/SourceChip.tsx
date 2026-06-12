@@ -5,7 +5,7 @@
 
 import React from "react";
 import type { SourceObject } from "@/store/reducer";
-import { CheckCircle2, XCircle, ExternalLink } from "lucide-react";
+import { CheckCircle2, XCircle, ExternalLink, Trash2 } from "lucide-react";
 
 const CREDIBILITY_CONFIG = {
   high:   { label: "High", color: "var(--signal-green)" },
@@ -16,9 +16,10 @@ const CREDIBILITY_CONFIG = {
 interface SourceChipProps {
   source: SourceObject;
   onToggle: (id: string) => void;
+  onRemove?: (id: string) => void;
 }
 
-export function SourceChip({ source, onToggle }: SourceChipProps) {
+export function SourceChip({ source, onToggle, onRemove }: SourceChipProps) {
   const credConfig = CREDIBILITY_CONFIG[source.credibility];
   const hostname = (() => {
     try { return new URL(source.url).hostname.replace("www.", ""); }
@@ -107,6 +108,24 @@ export function SourceChip({ source, onToggle }: SourceChipProps) {
             </p>
           )}
         </div>
+
+        {/* Remove button */}
+        {onRemove && (
+          <button
+            onClick={() => onRemove(source.id)}
+            aria-label="Remove source permanently"
+            title="Remove from analysis"
+            style={{
+              flexShrink: 0, background: "none", border: "none", cursor: "pointer", padding: "0.25rem",
+              color: "var(--muted-color)", marginTop: 2,
+              transition: "color 150ms ease-out, transform 100ms ease-out",
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--signal-red)"; (e.currentTarget as HTMLButtonElement).style.transform = "scale(1.1)"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--muted-color)"; (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
+          >
+            <Trash2 size={14} />
+          </button>
+        )}
       </div>
     </div>
   );

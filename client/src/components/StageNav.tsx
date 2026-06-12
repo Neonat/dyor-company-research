@@ -37,18 +37,17 @@ export function StageNav({ currentStage, onStageClick, className }: StageNavProp
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "1rem 1.5rem 0.75rem" }}>
         {/* Wordmark + progress bar */}
         <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", marginBottom: "0.6rem" }}>
-          <span
+          <img
+            src="/manus-storage/dyor-logo_57f1e2fd.jpg"
+            alt="DYOR"
             style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "0.9rem",
-              fontWeight: 700,
-              letterSpacing: "0.12em",
-              color: "var(--ink)",
+              width: 32,
+              height: 32,
+              borderRadius: "var(--radius-sm)",
+              objectFit: "contain",
               flexShrink: 0,
             }}
-          >
-            DYOR
-          </span>
+          />
 
           {/* Fluid progress bar */}
           <div
