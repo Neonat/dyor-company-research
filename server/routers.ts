@@ -95,58 +95,69 @@ const ProblemSetSchema = z.object({
 
 // ─── LLM helper ──────────────────────────────────────────────────────────────
 
+function extractOutermostJson(text: string): unknown | null {
+  const start = text.indexOf("{");
+  if (start === -1) return null;
+  let depth = 0;
+  let end = -1;
+  for (let i = start; i < text.length; i++) {
+    if (text[i] === "{") depth++;
+    else if (text[i] === "}") {
+      depth--;
+      if (depth === 0) { end = i; break; }
+    }
+  }
+  if (end === -1) return null;
+  try { return JSON.parse(text.slice(start, end + 1)); } catch { return null; }
+}
+
 async function callLLMStructured<T>(
   systemPrompt: string,
   userPrompt: string,
   toolName: string,
   toolSchema: Record<string, unknown>
 ): Promise<T> {
+  // Use response_format json_schema — more reliable than tool-calling across model families
   const response = await invokeLLM({
     model: "claude-haiku-4-5",
     messages: [
-      { role: "system", content: systemPrompt },
+      { role: "system", content: `${systemPrompt}\n\nYou MUST respond with a single valid JSON object matching the schema. No prose, no markdown fences, just the raw JSON object.` },
       { role: "user", content: userPrompt },
     ],
-    tools: [
-      {
-        type: "function",
-        function: {
-          name: toolName,
-          description: `Return structured ${toolName} data`,
-          parameters: toolSchema,
-        },
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: toolName,
+        strict: true,
+        schema: toolSchema,
       },
-    ],
-    tool_choice: { type: "function", function: { name: toolName } },
+    },
   });
 
+  // Try choices[0].message.content first (OpenAI-compatible)
   const msg = response.choices?.[0]?.message;
-  if (!msg) throw new Error("No message in LLM response");
-
-  // Handle tool_calls array (OpenAI-compatible format)
-  const toolCall = (msg as any).tool_calls?.[0];
-  if (toolCall?.function?.arguments) {
-    return JSON.parse(toolCall.function.arguments) as T;
-  }
-
-  // Fallback: extract the outermost JSON object from content
-  // Use a stack-based parser to find the full outer { ... } block
-  const content = typeof msg.content === "string" ? msg.content : "";
-  const start = content.indexOf("{");
-  if (start !== -1) {
-    let depth = 0;
-    let end = -1;
-    for (let i = start; i < content.length; i++) {
-      if (content[i] === "{") depth++;
-      else if (content[i] === "}") {
-        depth--;
-        if (depth === 0) { end = i; break; }
-      }
+  if (msg) {
+    const content = typeof msg.content === "string" ? msg.content : "";
+    if (content.trim()) {
+      // Try direct parse first
+      try { return JSON.parse(content) as T; } catch { /* fall through to extractor */ }
+      const extracted = extractOutermostJson(content);
+      if (extracted) return extracted as T;
     }
-    if (end !== -1) return JSON.parse(content.slice(start, end + 1)) as T;
+    // Also check tool_calls in case the model still used them
+    const toolCall = (msg as any).tool_calls?.[0];
+    if (toolCall?.function?.arguments) {
+      return JSON.parse(toolCall.function.arguments) as T;
+    }
   }
 
-  throw new Error("Could not extract structured data from LLM response");
+  // Deep fallback: scan the entire raw response for any JSON object
+  const rawText = JSON.stringify(response);
+  const extracted = extractOutermostJson(rawText);
+  if (extracted) return extracted as T;
+
+  console.error("[DYOR] LLM response dump:", JSON.stringify(response).slice(0, 2000));
+  throw new Error(`No structured data in LLM response (model: claude-haiku-4-5, tool: ${toolName})`);
 }
 
 // ─── Exa search helper ────────────────────────────────────────────────────────
