@@ -576,6 +576,58 @@ Call return_problem_set with 3-5 scoped problem statements. Each must have journ
         return ProblemSetSchema.parse(safeRaw);
       }),
 
+    // Logo fetch — tries multiple providers server-side to avoid CORS
+    fetchLogo: publicProcedure
+      .input(z.object({ companyName: z.string() }))
+      .mutation(async ({ input }) => {
+        const clean = input.companyName.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const variants = [
+          `${clean}.com`,
+          `${clean}.io`,
+          `${clean}.co`,
+          `${clean}.org`,
+          `${input.companyName.toLowerCase().replace(/\s+/g, "")}.com`,
+        ];
+
+        // Try Google's high-res favicon service first
+        for (const domain of variants) {
+          try {
+            const url = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+            const res = await fetch(url, { method: "HEAD" });
+            if (res.ok) {
+              // Verify it's not the default globe icon (check content-length)
+              const contentLength = parseInt(res.headers.get("content-length") || "0");
+              if (contentLength > 1000) {
+                return { url };
+              }
+            }
+          } catch {}
+        }
+
+        // Fallback: Clearbit
+        for (const domain of variants) {
+          try {
+            const url = `https://logo.clearbit.com/${domain}`;
+            const res = await fetch(url, { method: "HEAD" });
+            if (res.ok) return { url };
+          } catch {}
+        }
+
+        // Fallback: DuckDuckGo icons
+        for (const domain of variants) {
+          try {
+            const url = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+            const res = await fetch(url, { method: "HEAD" });
+            if (res.ok) {
+              const contentLength = parseInt(res.headers.get("content-length") || "0");
+              if (contentLength > 100) return { url };
+            }
+          } catch {}
+        }
+
+        return { url: null };
+      }),
+
     // Export: Generate Gamma deck
     generateGammaDeck: publicProcedure
       .input(z.object({ markdown: z.string(), gammaApiKey: z.string() }))

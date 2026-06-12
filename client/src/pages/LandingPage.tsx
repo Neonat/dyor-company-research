@@ -1,36 +1,13 @@
 /**
- * DYOR2 — Landing Page
- * Hero → Use Cases → Origin Story → Demo CTA
+ * DYOR2 — Landing Page (concise version)
+ * Hero → Quick use cases → Demo CTA
  */
 
 import { useState } from "react";
 import { useApp } from "@/store/AppContext";
-import { Search, FileText, Lightbulb, Target, ArrowRight, Key } from "lucide-react";
+import { ArrowRight, Key } from "lucide-react";
 
-const DUCK_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663450574649/4YK7LGL6oVWoKYiCvXEgQs/duck-loading-YHN9yVZ8Uz8orGSVb7GnER.webp";
-
-const USE_CASES = [
-  {
-    icon: Search,
-    title: "Due Diligence Research",
-    description: "Rapidly surface customer complaints, technical outages, and competitive weaknesses from across the web.",
-  },
-  {
-    icon: FileText,
-    title: "Problem Statement Generation",
-    description: "Transform raw research into scoped, actionable problem cards with journey maps and solution proposals.",
-  },
-  {
-    icon: Target,
-    title: "Investment Thesis Validation",
-    description: "Stress-test your assumptions with evidence-backed signal scorecards and tension analysis.",
-  },
-  {
-    icon: Lightbulb,
-    title: "Product Strategy Briefs",
-    description: "Generate analyst-grade briefs that identify where the real opportunities are hiding.",
-  },
-];
+const DUCK_HERO = "/manus-storage/duck_8_b98740f5.png";
 
 export default function LandingPage() {
   const { dispatch } = useApp();
@@ -49,115 +26,60 @@ export default function LandingPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--surface)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--surface)", display: "flex", flexDirection: "column" }}>
       {/* ─── Hero ─── */}
-      <section style={{ padding: "6rem 1.5rem 4rem", textAlign: "center" }}>
-        <div style={{ maxWidth: 720, margin: "0 auto" }}>
+      <section style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "4rem 1.5rem 2rem" }}>
+        <div style={{ maxWidth: 560, textAlign: "center" }}>
           <img
-            src={DUCK_IMG}
+            src={DUCK_HERO}
             alt="DYOR Detective Duck"
-            style={{ width: 120, height: 120, margin: "0 auto 1.5rem", borderRadius: "50%", background: "var(--paper)", padding: 8, boxShadow: "0 4px 24px rgba(0,0,0,0.06)" }}
+            style={{ width: 80, height: 80, margin: "0 auto 1.25rem", objectFit: "contain" }}
           />
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(2rem, 5vw, 3.5rem)", fontWeight: 700, color: "var(--ink)", lineHeight: 1.1, marginBottom: "1rem" }}>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(1.75rem, 4vw, 2.75rem)", fontWeight: 700, color: "var(--ink)", lineHeight: 1.15, marginBottom: "0.75rem" }}>
             Do Your Own Research
           </h1>
-          <p style={{ fontFamily: "var(--font-body)", fontSize: "1.125rem", color: "var(--muted-color)", maxWidth: 540, margin: "0 auto 2rem", lineHeight: 1.6 }}>
-            AI-powered due diligence that transforms a company name into a structured problem brief — complete with evidence, journey maps, and actionable next steps.
+          <p style={{ fontFamily: "var(--font-body)", fontSize: "1rem", color: "var(--muted-color)", maxWidth: 420, margin: "0 auto 2rem", lineHeight: 1.6 }}>
+            Company name in, structured problem brief out. AI-powered due diligence with evidence, signal scores, and journey maps.
           </p>
           <button
             onClick={() => setShowKeyModal(true)}
-            style={{
-              fontFamily: "var(--font-display)", fontSize: "1rem", fontWeight: 600,
-              background: "var(--ink)", color: "var(--paper)", border: "none",
-              padding: "0.875rem 2rem", borderRadius: "var(--radius-md)",
-              cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.5rem",
-              transition: "transform 160ms cubic-bezier(0.23,1,0.32,1), box-shadow 160ms ease-out",
-            }}
-            onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.97)"; }}
-            onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
+            className="btn-primary"
+            style={{ fontSize: "0.95rem", padding: "0.8rem 1.75rem", display: "inline-flex", alignItems: "center", gap: "0.5rem" }}
           >
-            Try the Demo <ArrowRight size={16} />
+            Try the Demo <ArrowRight size={15} />
           </button>
         </div>
       </section>
 
-      {/* ─── Use Cases ─── */}
-      <section style={{ padding: "3rem 1.5rem 4rem", background: "var(--paper)" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)", textAlign: "center", marginBottom: "2.5rem" }}>
-            What you can do with DYOR
+      {/* ─── How it works (compact) ─── */}
+      <section style={{ padding: "2.5rem 1.5rem 3rem", background: "var(--paper)", borderTop: "0.5px solid var(--border-color)" }}>
+        <div style={{ maxWidth: 700, margin: "0 auto" }}>
+          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", fontWeight: 600, color: "var(--ink)", textAlign: "center", marginBottom: "1.5rem" }}>
+            How it works
           </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1.5rem" }}>
-            {USE_CASES.map((uc) => (
-              <div
-                key={uc.title}
-                style={{
-                  padding: "1.5rem",
-                  border: "0.5px solid var(--border-color)",
-                  borderRadius: "var(--radius-md)",
-                  background: "var(--surface)",
-                  transition: "transform 200ms cubic-bezier(0.23,1,0.32,1), box-shadow 200ms ease-out",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.06)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}
-              >
-                <uc.icon size={24} style={{ color: "var(--research-blue)", marginBottom: "0.75rem" }} />
-                <h3 style={{ fontFamily: "var(--font-display)", fontSize: "0.95rem", fontWeight: 600, color: "var(--ink)", marginBottom: "0.5rem" }}>
-                  {uc.title}
-                </h3>
-                <p style={{ fontFamily: "var(--font-body)", fontSize: "0.825rem", color: "var(--muted-color)", lineHeight: 1.5 }}>
-                  {uc.description}
-                </p>
+          <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "1rem" }}>
+            {[
+              { step: "1", label: "Enter company name" },
+              { step: "2", label: "AI searches the web" },
+              { step: "3", label: "Review & approve sources" },
+              { step: "4", label: "Get signal scorecard" },
+              { step: "5", label: "Scoped problem cards" },
+              { step: "6", label: "Export your brief" },
+            ].map((s) => (
+              <div key={s.step} style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.5rem 0.875rem", border: "0.5px solid var(--border-color)", borderRadius: "var(--radius)", background: "var(--surface)" }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", fontWeight: 700, color: "var(--research-blue)", background: "rgba(55,138,221,0.08)", borderRadius: 4, padding: "2px 6px" }}>{s.step}</span>
+                <span style={{ fontFamily: "var(--font-body)", fontSize: "0.8rem", color: "var(--ink)" }}>{s.label}</span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ─── Origin Story ─── */}
-      <section style={{ padding: "4rem 1.5rem", background: "var(--surface)" }}>
-        <div style={{ maxWidth: 640, margin: "0 auto", textAlign: "center" }}>
-          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.5rem", fontWeight: 600, color: "var(--ink)", marginBottom: "1.5rem" }}>
-            Where this came from
-          </h2>
-          <div style={{ fontFamily: "var(--font-body)", fontSize: "0.9rem", color: "var(--muted-color)", lineHeight: 1.8, textAlign: "left" }}>
-            <p style={{ marginBottom: "1rem" }}>
-              Every analyst knows the drill: you get a company name, open 15 tabs, skim G2 reviews, scan TechCrunch for outages, dig through Reddit threads, and try to piece together what's actually going wrong for their customers.
-            </p>
-            <p style={{ marginBottom: "1rem" }}>
-              DYOR was born from the frustration of doing this manually for the hundredth time. What if an AI could do the initial sweep — surface the complaints, score the signals, and draft the problem statements — so you could spend your time on the parts that actually need human judgment?
-            </p>
-            <p>
-              That's what this tool does. It's not a replacement for thinking — it's a research accelerator that gets you to the "interesting questions" faster.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Bottom CTA ─── */}
-      <section style={{ padding: "4rem 1.5rem 6rem", textAlign: "center", background: "var(--paper)" }}>
-        <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.25rem", fontWeight: 600, color: "var(--ink)", marginBottom: "1rem" }}>
-          Ready to try it?
-        </h2>
-        <p style={{ fontFamily: "var(--font-body)", fontSize: "0.875rem", color: "var(--muted-color)", marginBottom: "1.5rem" }}>
-          You'll need an Exa API key to power the web research. It takes 30 seconds to get one.
+      {/* ─── Origin (one sentence) ─── */}
+      <section style={{ padding: "2rem 1.5rem 3rem", textAlign: "center" }}>
+        <p style={{ fontFamily: "var(--font-body)", fontSize: "0.85rem", color: "var(--muted-color)", maxWidth: 480, margin: "0 auto", lineHeight: 1.6, fontStyle: "italic" }}>
+          Built for analysts tired of opening 15 tabs to piece together what's going wrong for a company's customers. DYOR does the initial sweep so you can focus on the questions that need human judgment.
         </p>
-        <button
-          onClick={() => setShowKeyModal(true)}
-          style={{
-            fontFamily: "var(--font-display)", fontSize: "1rem", fontWeight: 600,
-            background: "var(--research-blue)", color: "#fff", border: "none",
-            padding: "0.875rem 2rem", borderRadius: "var(--radius-md)",
-            cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.5rem",
-            transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
-          }}
-          onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.97)"; }}
-          onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
-        >
-          Launch Demo <ArrowRight size={16} />
-        </button>
       </section>
 
       {/* ─── API Key Modal ─── */}
@@ -175,21 +97,21 @@ export default function LandingPage() {
           <div
             style={{
               background: "var(--paper)", borderRadius: "var(--radius-lg)",
-              padding: "2rem", maxWidth: 420, width: "100%",
+              padding: "2rem", maxWidth: 400, width: "100%",
               boxShadow: "0 24px 48px rgba(0,0,0,0.12)",
               animation: "scaleIn 200ms cubic-bezier(0.23,1,0.32,1)",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.5rem" }}>
-              <div style={{ width: 40, height: 40, borderRadius: "var(--radius)", background: "var(--surface)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Key size={20} style={{ color: "var(--research-blue)" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1.25rem" }}>
+              <div style={{ width: 36, height: 36, borderRadius: "var(--radius)", background: "var(--surface)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Key size={18} style={{ color: "var(--research-blue)" }} />
               </div>
               <div>
-                <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", fontWeight: 600, color: "var(--ink)" }}>
-                  Enter your Exa API key
+                <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1rem", fontWeight: 600, color: "var(--ink)" }}>
+                  Exa API Key
                 </h3>
-                <p style={{ fontFamily: "var(--font-body)", fontSize: "0.75rem", color: "var(--muted-color)" }}>
-                  Powers the web research in Stage 2
+                <p style={{ fontFamily: "var(--font-body)", fontSize: "0.7rem", color: "var(--muted-color)" }}>
+                  Powers web research in Stage 2
                 </p>
               </div>
             </div>
@@ -200,8 +122,8 @@ export default function LandingPage() {
               onChange={(e) => { setExaKey(e.target.value); setKeyError(""); }}
               placeholder="exa-xxxxxxxxxxxxxxxx"
               style={{
-                width: "100%", padding: "0.75rem 1rem",
-                fontFamily: "var(--font-mono)", fontSize: "0.825rem",
+                width: "100%", padding: "0.7rem 0.875rem",
+                fontFamily: "var(--font-mono)", fontSize: "0.8rem",
                 border: keyError ? "1.5px solid var(--signal-red)" : "0.5px solid var(--border-color)",
                 borderRadius: "var(--radius)", background: "var(--surface)",
                 color: "var(--ink)", outline: "none",
@@ -213,31 +135,21 @@ export default function LandingPage() {
               autoFocus
             />
             {keyError && (
-              <p style={{ fontFamily: "var(--font-body)", fontSize: "0.75rem", color: "var(--signal-red)", marginTop: "0.5rem" }}>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: "0.7rem", color: "var(--signal-red)", marginTop: "0.4rem" }}>
                 {keyError}
               </p>
             )}
 
-            <p style={{ fontFamily: "var(--font-body)", fontSize: "0.7rem", color: "var(--muted-color)", marginTop: "0.75rem", lineHeight: 1.5 }}>
-              Get a free key at{" "}
-              <a href="https://exa.ai" target="_blank" rel="noopener noreferrer" style={{ color: "var(--research-blue)", textDecoration: "underline" }}>
-                exa.ai
-              </a>
-              . Your key is stored locally and only sent when running searches.
+            <p style={{ fontFamily: "var(--font-body)", fontSize: "0.675rem", color: "var(--muted-color)", marginTop: "0.6rem", lineHeight: 1.5 }}>
+              Free key at{" "}
+              <a href="https://exa.ai" target="_blank" rel="noopener noreferrer" style={{ color: "var(--research-blue)", textDecoration: "underline" }}>exa.ai</a>
+              . Stored locally, only sent when running searches.
             </p>
 
             <button
               onClick={handleLaunch}
-              style={{
-                width: "100%", marginTop: "1.25rem",
-                fontFamily: "var(--font-display)", fontSize: "0.9rem", fontWeight: 600,
-                background: "var(--ink)", color: "var(--paper)", border: "none",
-                padding: "0.75rem", borderRadius: "var(--radius)",
-                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-                transition: "transform 160ms cubic-bezier(0.23,1,0.32,1)",
-              }}
-              onMouseDown={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(0.97)"; }}
-              onMouseUp={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = "scale(1)"; }}
+              className="btn-primary"
+              style={{ width: "100%", marginTop: "1rem", justifyContent: "center" }}
             >
               Start Research <ArrowRight size={14} />
             </button>
@@ -245,7 +157,6 @@ export default function LandingPage() {
         </div>
       )}
 
-      {/* Inline keyframe animations */}
       <style>{`
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }

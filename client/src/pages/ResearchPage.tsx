@@ -1,7 +1,6 @@
 /**
  * DYOR2 — ResearchPage
  * Stage 2: Claude generates Exa prompts → user edits → runs search → source cards
- * Design: DYOR design system — ink/paper, Poppins, flat hairline borders, mascot states
  */
 
 import React, { useState, useEffect } from "react";
@@ -10,28 +9,24 @@ import { trpc } from "@/lib/trpc";
 import { SourceChip } from "@/components/SourceChip";
 import { RegenerateButton } from "@/components/RegenerateButton";
 import Mascot from "@/components/Mascot";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { ArrowRight, Search, Edit3, AlertCircle, CheckCircle2, Key, X } from "lucide-react";
+import { ArrowRight, Search, Edit3, AlertCircle, CheckCircle2, Key } from "lucide-react";
 
 export default function ResearchPage() {
   const { state, dispatch } = useApp();
+
   const [editingPromptId, setEditingPromptId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
-  // Use exaApiKey from global state (set during landing page API key modal)
-  const exaApiKey = state.exaApiKey || (() => { try { return localStorage.getItem("dyor2_exa_key") || ""; } catch { return ""; } })();
   const [showKeyInput, setShowKeyInput] = useState(false);
-  // Local setter for inline key editing (fallback if user wants to change key)
-  const [localExaKey, setLocalExaKey] = useState(exaApiKey);
+  const [localExaKey, setLocalExaKey] = useState(() => {
+    return state.exaApiKey || (() => { try { return localStorage.getItem("dyor2_exa_key") || ""; } catch { return ""; } })();
+  });
 
-  const hasPrompts      = !!state.exaPrompts && state.exaPrompts.prompts.length > 0;
-  const hasSources      = state.researchSources.length > 0;
-  const approvedCount   = state.researchSources.filter((s) => s.approved).length;
+  // Effective key — prefer localExaKey (which starts from state), allow user to override inline
+  const effectiveKey = localExaKey.trim();
+
+  const hasPrompts       = !!state.exaPrompts && state.exaPrompts.prompts.length > 0;
+  const hasSources       = state.researchSources.length > 0;
+  const approvedCount    = state.researchSources.filter((s) => s.approved).length;
   const isPromptsLoading = state.loadingSection === "research-prompts";
   const isSearchLoading  = state.loadingSection === "research-search";
   const hasError         = state.errorSection === "research-prompts" || state.errorSection === "research-search";
@@ -42,8 +37,14 @@ export default function ResearchPage() {
   });
 
   const runExaSearchMutation = trpc.dyor.runExaSearch.useMutation({
-    onSuccess: (data) => { dispatch({ type: "SET_RESEARCH_SOURCES", sources: data.sources }); },
-    onError: (err)   => { dispatch({ type: "SET_ERROR", section: "research-search", message: err.message }); },
+    onSuccess: (data) => {
+      if (data.sources && data.sources.length > 0) {
+        dispatch({ type: "SET_RESEARCH_SOURCES", sources: data.sources });
+      } else {
+        dispatch({ type: "SET_ERROR", section: "research-search", message: "No sources found. Try editing the queries or check your Exa API key." });
+      }
+    },
+    onError: (err) => { dispatch({ type: "SET_ERROR", section: "research-search", message: err.message }); },
   });
 
   useEffect(() => {
@@ -67,14 +68,16 @@ export default function ResearchPage() {
   }
 
   function runSearch() {
-    const key = localExaKey || exaApiKey;
-    if (!state.exaPrompts || !key.trim()) return;
-    try { localStorage.setItem("dyor2_exa_key", key); } catch {}
-    dispatch({ type: "SET_RESEARCH_SOURCES", sources: [] });
+    if (!state.exaPrompts || !effectiveKey) return;
+    // Save key to localStorage and state
+    try { localStorage.setItem("dyor2_exa_key", effectiveKey); } catch {}
+    if (effectiveKey !== state.exaApiKey) {
+      dispatch({ type: "LAUNCH_DEMO", exaApiKey: effectiveKey });
+    }
     dispatch({ type: "SET_LOADING", section: "research-search" });
     runExaSearchMutation.mutate({
       prompts: state.exaPrompts.prompts.map((p) => ({ id: p.id, query: p.query })),
-      exaApiKey: key.trim(),
+      exaApiKey: effectiveKey,
     });
   }
 
@@ -90,8 +93,7 @@ export default function ResearchPage() {
           Research
         </h1>
         <p style={{ color: "var(--muted-color)", fontSize: "0.9375rem", lineHeight: 1.6 }}>
-          Claude has generated targeted search queries for <strong style={{ color: "var(--ink)" }}>{state.companyName}</strong>.
-          Edit any query, then run the search to gather sources.
+          Edit any query below, then run the search to gather sources for <strong style={{ color: "var(--ink)" }}>{state.companyName}</strong>.
         </p>
       </div>
 
@@ -195,7 +197,7 @@ export default function ResearchPage() {
       </div>
 
       {/* Exa API Key + Run Search */}
-      {hasPrompts && (
+      {hasPrompts && !isPromptsLoading && (
         <div className="dyor-card" style={{ padding: "1rem 1.25rem", marginBottom: "1.5rem", background: "var(--surface)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.75rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -208,11 +210,11 @@ export default function ResearchPage() {
               onClick={() => setShowKeyInput(!showKeyInput)}
               style={{ fontSize: "0.75rem", color: "var(--muted-color)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", padding: 0 }}
             >
-              {showKeyInput ? "Hide" : exaApiKey ? "Change" : "Enter key"}
+              {showKeyInput ? "Hide" : effectiveKey ? "Change" : "Enter key"}
             </button>
           </div>
 
-          {(showKeyInput || !exaApiKey) && (
+          {(showKeyInput || !effectiveKey) && (
             <div style={{ marginBottom: "0.75rem" }}>
               <input
                 type="password"
@@ -227,22 +229,21 @@ export default function ResearchPage() {
                 <a href="https://exa.ai" target="_blank" rel="noopener noreferrer" style={{ color: "var(--research-blue)", textDecoration: "underline" }}>
                   exa.ai
                 </a>
-                . Stored locally in your browser only.
               </p>
             </div>
           )}
 
-          {exaApiKey && !showKeyInput && (
+          {effectiveKey && !showKeyInput && (
             <p style={{ fontSize: "0.8125rem", color: "var(--muted-color)", marginBottom: "0.75rem" }}>
-              Key saved: <span style={{ fontFamily: "var(--font-mono)" }}>••••••••{exaApiKey.slice(-4)}</span>
+              Key: <span style={{ fontFamily: "var(--font-mono)" }}>••••••••{effectiveKey.slice(-4)}</span>
             </p>
           )}
 
           <button
             onClick={runSearch}
-            disabled={!exaApiKey.trim() || isSearchLoading}
+            disabled={!effectiveKey || isSearchLoading}
             className="btn-primary"
-            style={{ width: "100%", justifyContent: "center", padding: "0.625rem 1rem" }}
+            style={{ width: "100%", justifyContent: "center", padding: "0.625rem 1rem", opacity: (!effectiveKey || isSearchLoading) ? 0.5 : 1 }}
           >
             {isSearchLoading ? (
               <>
@@ -264,7 +265,7 @@ export default function ResearchPage() {
       )}
 
       {/* Loading search mascot */}
-      {isSearchLoading && state.researchSources.length === 0 && (
+      {isSearchLoading && (
         <Mascot state="loading" caption="Searching the web for relevant sources…" />
       )}
 

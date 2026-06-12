@@ -53,34 +53,22 @@ export default function IntakePage() {
     },
   });
 
-  // Try to fetch company logo immediately when company name is submitted
-  function fetchCompanyLogo(name: string) {
-    const clean = name.toLowerCase().replace(/[^a-z0-9]/g, '');
-    // Try multiple domain variants
-    const variants = [
-      `${clean}.com`,
-      `${clean}.io`,
-      `${clean}.co`,
-      `${name.toLowerCase().replace(/\s+/g, '')}.com`,
-    ];
-    let found = false;
-    for (const domain of variants) {
-      const logoUrl = `https://logo.clearbit.com/${domain}`;
-      const img = new Image();
-      img.onload = () => { if (!found) { found = true; dispatch({ type: "SET_COMPANY_LOGO", url: logoUrl }); } };
-      img.src = logoUrl;
-    }
-    // Fallback: set a placeholder after 3s if nothing loaded
-    setTimeout(() => { if (!found) dispatch({ type: "SET_COMPANY_LOGO", url: null }); }, 3000);
-  }
+  const fetchLogoMutation = trpc.dyor.fetchLogo.useMutation({
+    onSuccess: (data) => {
+      dispatch({ type: "SET_COMPANY_LOGO", url: data.url });
+    },
+    onError: () => {
+      dispatch({ type: "SET_COMPANY_LOGO", url: null });
+    },
+  });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!companyName.trim() || !role) return;
     dispatch({ type: "SET_INTAKE", companyName: companyName.trim(), role });
     dispatch({ type: "SET_LOADING", section: "intake" });
-    // Fetch logo immediately so the duck can inspect it during loading
-    fetchCompanyLogo(companyName.trim());
+    // Fetch logo server-side so the duck can inspect it during loading
+    fetchLogoMutation.mutate({ companyName: companyName.trim() });
     getIntakeBriefMutation.mutate({ companyName: companyName.trim(), role });
   }
 

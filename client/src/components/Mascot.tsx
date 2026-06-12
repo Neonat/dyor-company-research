@@ -1,20 +1,18 @@
 /**
- * DYOR2 — Mascot Loading Component
- * Shows the detective duck inspecting the company logo during all loading states.
- * Falls back to inspecting a generic sparkle if no logo is available.
+ * DYOR2 — Mascot Component
+ * Uses cropped duck sprites from the user's sprite sheet.
+ * Loading: duck with magnifying glass inspecting company logo
+ * Empty: duck looking up
+ * Success: front-facing duck with mustache
+ * Error: duck looking sideways
  */
 
 import { useApp } from "@/store/AppContext";
 
-const DUCK_IMG = "https://d2xsxph8kpxj0f.cloudfront.net/310519663450574649/4YK7LGL6oVWoKYiCvXEgQs/duck-loading-YHN9yVZ8Uz8orGSVb7GnER.webp";
-
-// Keep old mascot URLs for non-loading states
-const MASCOT_URLS = {
-  loading: DUCK_IMG,
-  empty: "/manus-storage/mascot-empty_a9e5291d.png",
-  success: "/manus-storage/mascot-success_c580e87e.png",
-  error: "/manus-storage/mascot-error_ec243ec0.png",
-} as const;
+const DUCK_LOADING = "/manus-storage/duck_9_8ae18175.png";  // magnifying glass
+const DUCK_EMPTY   = "/manus-storage/duck_7_5121c766.png";  // looking up
+const DUCK_SUCCESS = "/manus-storage/duck_3_14fbf162.png";  // front-facing
+const DUCK_ERROR   = "/manus-storage/duck_8_b98740f5.png";  // looking sideways
 
 const DEFAULT_CAPTIONS: Record<string, string> = {
   loading: "Investigating...",
@@ -34,29 +32,35 @@ export default function Mascot({ state, caption, size = 96, className = "" }: Ma
   const { state: appState } = useApp();
   const companyLogo = appState.companyLogoUrl;
 
+  const imgSrc = state === "loading" ? DUCK_LOADING
+    : state === "empty" ? DUCK_EMPTY
+    : state === "success" ? DUCK_SUCCESS
+    : DUCK_ERROR;
+
   // For loading state, show duck + company logo composition
   if (state === "loading") {
     return (
       <div className={className} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", padding: "1.5rem 0" }}>
         <div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
-          {/* Duck detective */}
+          {/* Duck detective with magnifying glass */}
           <img
-            src={DUCK_IMG}
+            src={DUCK_LOADING}
             alt="Detective duck investigating"
             style={{
               width: size,
               height: size,
+              objectFit: "contain",
               animation: "duckBob 1.5s ease-in-out infinite",
             }}
           />
-          {/* Inspected target: company logo or fallback document */}
+          {/* Company logo being inspected */}
           <div
             style={{
-              marginLeft: size * 0.1,
-              width: size * 0.45,
-              height: size * 0.45,
-              borderRadius: "var(--radius)",
-              border: "0.5px solid var(--border-color)",
+              marginLeft: size * 0.08,
+              width: size * 0.4,
+              height: size * 0.4,
+              borderRadius: 8,
+              border: "1.5px solid var(--border-color)",
               background: "#fff",
               display: "flex",
               alignItems: "center",
@@ -73,13 +77,11 @@ export default function Mascot({ state, caption, size = 96, className = "" }: Ma
                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
               />
             ) : (
-              /* Fallback: a cute document/brief icon */
               <svg width="60%" height="60%" viewBox="0 0 24 24" fill="none" stroke="var(--muted-color)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
                 <line x1="16" y1="13" x2="8" y2="13" />
                 <line x1="16" y1="17" x2="8" y2="17" />
-                <polyline points="10 9 9 9 8 9" />
               </svg>
             )}
           </div>
@@ -107,14 +109,12 @@ export default function Mascot({ state, caption, size = 96, className = "" }: Ma
     );
   }
 
-  // For non-loading states, show the appropriate mascot
+  // For non-loading states
   return (
     <div className={className} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "0.75rem", padding: "1.5rem 0" }}>
       <img
-        src={MASCOT_URLS[state]}
-        alt={`DYOR mascot — ${state}`}
-        width={size}
-        height={size}
+        src={imgSrc}
+        alt={`DYOR duck — ${state}`}
         style={{ width: size, height: size, objectFit: "contain" }}
       />
       <p style={{

@@ -81,3 +81,10 @@
 - [x] Company logo context strip below progress bar (appears after Stage 1, Clearbit logo fetch)
 - [x] Duck-inspecting-logo loading animation for all loading states
 - [x] Polish page transitions and micro-interactions
+
+## Bug Fixes (Round 2)
+
+- [x] Exa search results not showing after running queries (removed pre-clear, added error handling)
+- [x] Landing page too verbose — made more concise (hero + 6-step + one-sentence origin)
+- [x] Company logo not displaying (switched to server-side multi-provider: Google Favicons → Clearbit → DuckDuckGo)
+- [x] Crop duck assets from user sprite sheet and use as mascot images
