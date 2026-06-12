@@ -2,6 +2,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
+import { invokeLLM } from "./_core/llm";
 import { z } from "zod";
 import type {
   IntakeBrief,
@@ -99,47 +100,38 @@ async function callLLMStructured<T>(
   toolName: string,
   toolSchema: Record<string, unknown>
 ): Promise<T> {
-  const anthropicKey = process.env.ANTHROPIC_API_KEY;
-  if (!anthropicKey) {
-    throw new Error("ANTHROPIC_API_KEY is not configured");
-  }
-
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": anthropicKey,
-      "anthropic-version": "2023-06-01",
+  const response = await invokeLLM({
+    model: "claude-haiku-4-5",
+    max_tokens: 4096,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: { name: toolName, schema: toolSchema, strict: false },
     },
-    body: JSON.stringify({
-      model: "claude-haiku-4-5",
-      max_tokens: 4096,
-      system: systemPrompt,
-      tools: [
-        {
-          name: toolName,
-          description: `Return structured output matching the ${toolName} schema`,
-          input_schema: toolSchema,
-        },
-      ],
-      tool_choice: { type: "tool", name: toolName },
-      messages: [{ role: "user", content: userPrompt }],
-    }),
   });
 
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`Anthropic API error ${res.status}: ${errorText}`);
+  const msg = response.choices?.[0]?.message;
+  const rawContent =
+    typeof msg?.content === "string"
+      ? msg.content
+      : Array.isArray(msg?.content)
+        ? ((msg.content as any[]).find((b: any) => b.type === "text")?.text ?? "")
+        : "";
+
+  if (!rawContent.trim()) {
+    console.error("[DYOR] Empty LLM response for", toolName, JSON.stringify(response).slice(0, 500));
+    throw new Error(`Empty response from LLM (tool: ${toolName})`);
   }
 
-  const data = await res.json() as { content: Array<{ type: string; input?: unknown }> };
-  const toolUse = data.content?.find((b) => b.type === "tool_use");
-  if (!toolUse?.input) {
-    console.error("[DYOR] Anthropic response missing tool_use:", JSON.stringify(data).slice(0, 1000));
-    throw new Error(`No tool_use block in Anthropic response (tool: ${toolName})`);
+  try {
+    return JSON.parse(rawContent) as T;
+  } catch {
+    console.error("[DYOR] Failed to parse LLM response for", toolName, rawContent.slice(0, 500));
+    throw new Error(`Invalid JSON in LLM response (tool: ${toolName})`);
   }
-
-  return toolUse.input as T;
 }
 
 // ─── Exa search helper ────────────────────────────────────────────────────────
@@ -535,7 +527,9 @@ Call return_problem_set with 3-5 scoped problem statements. Each must have journ
             additionalProperties: false,
           }
         );
-        return ProblemSetSchema.parse(raw);
+        // If the model returned a bare array, wrap it
+        const normalized = Array.isArray(raw) ? { problems: raw } : raw;
+        return ProblemSetSchema.parse(normalized);
       }),
 
     // Logo fetch — tries multiple providers server-side to avoid CORS
