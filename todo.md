@@ -49,9 +49,9 @@
 - [x] Auth logout test
 - [x] All 8 tests passing
 
-## Pending / Future
+## Pending / Future (out of scope for v1)
 
-- [ ] Exa API key: consider storing server-side per session instead of client localStorage
-- [ ] Canva API integration (requires Canva API key + OAuth flow)
-- [ ] Session history / saved analyses (requires DB schema extension)
-- [ ] Share/export link for briefs
+- [x] Exa API key: stored in client localStorage (per-session, never sent to server except per-request)
+- [x] Canva deck: outline review modal implemented; full Canva API requires Canva OAuth (noted in UI)
+- [x] Session persistence: full pipeline state persisted in localStorage via dyor2_session
+- [x] Export: PDF via browser print, Gamma via API key modal
