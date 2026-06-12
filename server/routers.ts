@@ -102,7 +102,7 @@ async function callLLMStructured<T>(
   toolSchema: Record<string, unknown>
 ): Promise<T> {
   const response = await invokeLLM({
-    model: "claude-sonnet-4-6",
+    model: "claude-haiku-4-5",
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
@@ -129,10 +129,22 @@ async function callLLMStructured<T>(
     return JSON.parse(toolCall.function.arguments) as T;
   }
 
-  // Fallback: parse content as JSON
+  // Fallback: extract the outermost JSON object from content
+  // Use a stack-based parser to find the full outer { ... } block
   const content = typeof msg.content === "string" ? msg.content : "";
-  const jsonMatch = content.match(/\{[\s\S]*\}/);
-  if (jsonMatch) return JSON.parse(jsonMatch[0]) as T;
+  const start = content.indexOf("{");
+  if (start !== -1) {
+    let depth = 0;
+    let end = -1;
+    for (let i = start; i < content.length; i++) {
+      if (content[i] === "{") depth++;
+      else if (content[i] === "}") {
+        depth--;
+        if (depth === 0) { end = i; break; }
+      }
+    }
+    if (end !== -1) return JSON.parse(content.slice(start, end + 1)) as T;
+  }
 
   throw new Error("Could not extract structured data from LLM response");
 }
@@ -467,7 +479,7 @@ Synthesize into a SynthesisReport with:
           .join("\n");
 
         const raw = await callLLMStructured<ProblemSet>(
-          `You are a product strategist and CX analyst. Convert research signals into scoped, actionable problem statements with journey maps and solution directions.`,
+          `You are a product strategist and CX analyst. You MUST call the return_problem_set tool with a JSON object that has a "problems" array containing 3-7 problem objects. Never return a bare array — always wrap in {"problems": [...]}. Each problem must have: id, title, tags, difficulty (1-5), journeySteps (4-6 steps with ok/partial/failure status), evidenceSummary, sourceIds, and solutions (2-3 items with title, description, stack).`,
           `Company: ${input.companyName}
 Analyst role: ${input.role}
 
@@ -477,7 +489,7 @@ ${signalsText}
 Key tensions:
 ${input.keyTensions.join("\n")}
 
-Generate 3-7 scoped problem statements with journey maps (4-6 steps each), evidence summaries, and 2-3 solution directions per problem.`,
+Call return_problem_set with 3-5 scoped problem statements. Each must have journey maps (4-6 steps), evidence summaries, and 2-3 solution directions. Use tags from: ML, API, UX, systems, data-pipeline.`,
           "return_problem_set",
           {
             type: "object",
@@ -530,7 +542,9 @@ Generate 3-7 scoped problem statements with journey maps (4-6 steps each), evide
             additionalProperties: false,
           }
         );
-        return ProblemSetSchema.parse(raw);
+        // Safety: if LLM returned a bare array instead of {problems:[...]}, wrap it
+        const safeRaw = Array.isArray((raw as any)) ? { problems: raw } : raw;
+        return ProblemSetSchema.parse(safeRaw);
       }),
 
     // Export: Generate Gamma deck
