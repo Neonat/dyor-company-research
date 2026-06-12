@@ -151,19 +151,26 @@ async function callLLMStructured<T>(
   toolName: string,
   toolSchema: Record<string, unknown>
 ): Promise<T> {
-  // Build a compact schema description for the prompt
-  const schemaStr = JSON.stringify(toolSchema, null, 2);
-
   const response = await invokeLLM({
     model: "claude-haiku-4-5",
     messages: [
       {
         role: "system",
-        content: `${systemPrompt}\n\nYou MUST respond with ONLY a raw JSON object (no markdown, no prose, no code fences). The JSON must match this schema exactly:\n${schemaStr}`,
+        content: systemPrompt,
       },
       { role: "user", content: userPrompt },
     ],
-    response_format: { type: "json_object" },
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: toolName,
+          description: `Return structured output matching the ${toolName} schema`,
+          parameters: toolSchema,
+        },
+      },
+    ],
+    toolChoice: { name: toolName },
   });
 
   console.log(`[DYOR] callLLMStructured(${toolName}) - response keys:`, Object.keys(response || {}));
