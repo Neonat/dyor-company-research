@@ -111,53 +111,71 @@ function extractOutermostJson(text: string): unknown | null {
   try { return JSON.parse(text.slice(start, end + 1)); } catch { return null; }
 }
 
+/** Unwrap a parsed JSON value ONLY if it is wrapped in a key that exactly matches the toolName.
+ * e.g. { "return_intake_brief": { companyName: ... } } → { companyName: ... }
+ * Does NOT unwrap legitimate single-key payloads like { "prompts": [...] }.
+ */
+function unwrapIfNamed(parsed: unknown, toolName: string): unknown {
+  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    const keys = Object.keys(parsed as object);
+    if (keys.length === 1 && keys[0] === toolName) {
+      return (parsed as Record<string, unknown>)[toolName];
+    }
+  }
+  return parsed;
+}
+
 async function callLLMStructured<T>(
   systemPrompt: string,
   userPrompt: string,
   toolName: string,
   toolSchema: Record<string, unknown>
 ): Promise<T> {
-  // Use response_format json_schema — more reliable than tool-calling across model families
+  // Build a compact schema description for the prompt
+  const schemaStr = JSON.stringify(toolSchema, null, 2);
+
   const response = await invokeLLM({
     model: "claude-haiku-4-5",
     messages: [
-      { role: "system", content: `${systemPrompt}\n\nYou MUST respond with a single valid JSON object matching the schema. No prose, no markdown fences, just the raw JSON object.` },
+      {
+        role: "system",
+        content: `${systemPrompt}\n\nYou MUST respond with ONLY a raw JSON object (no markdown, no prose, no code fences). The JSON must match this schema exactly:\n${schemaStr}`,
+      },
       { role: "user", content: userPrompt },
     ],
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: toolName,
-        strict: true,
-        schema: toolSchema,
-      },
-    },
+    response_format: { type: "json_object" },
   });
 
-  // Try choices[0].message.content first (OpenAI-compatible)
+  // Extract content from choices[0].message
   const msg = response.choices?.[0]?.message;
-  if (msg) {
-    const content = typeof msg.content === "string" ? msg.content : "";
-    if (content.trim()) {
-      // Try direct parse first
-      try { return JSON.parse(content) as T; } catch { /* fall through to extractor */ }
-      const extracted = extractOutermostJson(content);
-      if (extracted) return extracted as T;
-    }
-    // Also check tool_calls in case the model still used them
-    const toolCall = (msg as any).tool_calls?.[0];
-    if (toolCall?.function?.arguments) {
-      return JSON.parse(toolCall.function.arguments) as T;
-    }
+  const rawContent = msg ? (typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content)) : "";
+
+  // Also check tool_calls in case the model used them anyway
+  const toolCall = msg ? (msg as any).tool_calls?.[0] : undefined;
+  if (toolCall?.function?.arguments) {
+    const parsed = JSON.parse(toolCall.function.arguments);
+    return unwrapIfNamed(parsed, toolName) as T;
   }
 
-  // Deep fallback: scan the entire raw response for any JSON object
+  if (rawContent.trim()) {
+    // Try direct parse
+    try {
+      const parsed = JSON.parse(rawContent);
+      return unwrapIfNamed(parsed, toolName) as T;
+    } catch { /* fall through */ }
+
+    // Try extracting outermost JSON object
+    const extracted = extractOutermostJson(rawContent);
+    if (extracted) return unwrapIfNamed(extracted, toolName) as T;
+  }
+
+  // Last resort: scan entire raw response string
   const rawText = JSON.stringify(response);
   const extracted = extractOutermostJson(rawText);
-  if (extracted) return extracted as T;
+  if (extracted) return unwrapIfNamed(extracted, toolName) as T;
 
-  console.error("[DYOR] LLM response dump:", JSON.stringify(response).slice(0, 2000));
-  throw new Error(`No structured data in LLM response (model: claude-haiku-4-5, tool: ${toolName})`);
+  console.error("[DYOR] LLM raw response:", JSON.stringify(response).slice(0, 3000));
+  throw new Error(`No structured JSON in LLM response (tool: ${toolName})`);
 }
 
 // ─── Exa search helper ────────────────────────────────────────────────────────
