@@ -159,7 +159,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       };
 
     case "SET_RESEARCH_SOURCES":
-      return { ...state, researchSources: action.sources, loadingSection: null };
+      // Auto-approve all sources on first load — user can reject on Checkpoint page
+      return { ...state, researchSources: action.sources.map((s) => ({ ...s, approved: true })), loadingSection: null };
 
     case "APPEND_RESEARCH_SOURCES": {
       const existingUrls = new Set(state.researchSources.map((s) => s.url));

@@ -295,7 +295,6 @@ export default function ResearchPage() {
             </p>
             <button
               onClick={() => dispatch({ type: "ADVANCE_STAGE", stage: 3 })}
-              disabled={approvedCount < 1}
               className="btn-primary"
               style={{ padding: "0.625rem 1.25rem" }}
             >
