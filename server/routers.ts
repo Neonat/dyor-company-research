@@ -114,6 +114,8 @@ async function callLLMStructured<T>(
   });
 
   const msg = response.choices?.[0]?.message;
+
+  // Primary path: json_schema response format returns content as a JSON string
   const rawContent =
     typeof msg?.content === "string"
       ? msg.content
@@ -121,17 +123,27 @@ async function callLLMStructured<T>(
         ? ((msg.content as any[]).find((b: any) => b.type === "text")?.text ?? "")
         : "";
 
-  if (!rawContent.trim()) {
-    console.error("[DYOR] Empty LLM response for", toolName, JSON.stringify(response).slice(0, 500));
-    throw new Error(`Empty response from LLM (tool: ${toolName})`);
+  if (rawContent.trim()) {
+    try {
+      return JSON.parse(rawContent) as T;
+    } catch {
+      console.error("[DYOR] Failed to parse content for", toolName, rawContent.slice(0, 500));
+      throw new Error(`Invalid JSON in LLM response (tool: ${toolName})`);
+    }
   }
 
-  try {
-    return JSON.parse(rawContent) as T;
-  } catch {
-    console.error("[DYOR] Failed to parse LLM response for", toolName, rawContent.slice(0, 500));
-    throw new Error(`Invalid JSON in LLM response (tool: ${toolName})`);
+  // Fallback: tool_calls format (used by mocks in tests and some proxy variants)
+  const toolCallArgs = (msg as any)?.tool_calls?.[0]?.function?.arguments;
+  if (toolCallArgs) {
+    try {
+      return JSON.parse(toolCallArgs) as T;
+    } catch {
+      throw new Error(`Invalid JSON in tool_call arguments (tool: ${toolName})`);
+    }
   }
+
+  console.error("[DYOR] Empty LLM response for", toolName, JSON.stringify(response).slice(0, 500));
+  throw new Error(`Empty response from LLM (tool: ${toolName})`);
 }
 
 // ─── Exa search helper ────────────────────────────────────────────────────────
