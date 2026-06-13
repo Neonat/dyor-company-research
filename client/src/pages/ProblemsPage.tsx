@@ -19,6 +19,23 @@ export default function ProblemsPage() {
   const { state, dispatch } = useApp();
   const [activeTag, setActiveTag] = useState<ProblemTag | "all">("all");
 
+  // Debug: keyboard shortcut DD to load test data
+  useEffect(() => {
+    let dCount = 0;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === "d") {
+        dCount++;
+        if (dCount === 2) {
+          loadTestProblems();
+          dCount = 0;
+        }
+        setTimeout(() => { dCount = 0; }, 500);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const isLoading    = state.loadingSection === "problems";
   const hasError     = state.errorSection   === "problems";
   const hasProblemSet = !!state.problemSet;
@@ -40,6 +57,69 @@ export default function ProblemsPage() {
       keyTensions: state.synthesisReport.keyTensions,
       approvedSources: approvedSources.map((s) => ({ id: s.id, title: s.title, snippet: s.snippet })),
     });
+  }
+
+  // Debug: hard-coded test problems
+  function loadTestProblems() {
+    const testProblems = {
+      problems: [
+        {
+          id: "prob_1",
+          title: "Merchants struggle with payment reconciliation",
+          tags: ["systems" as const],
+          difficulty: 4 as const,
+          journeySteps: [
+            { label: "Upload transactions", status: "ok" as const },
+            { label: "Auto-match", status: "partial" as const },
+            { label: "Manual review", status: "failure" as const },
+            { label: "Settlement", status: "failure" as const },
+          ],
+          evidenceSummary: "G2 reviews cite 40% of reconciliations require manual intervention. Shopify merchants report 2-3 hours per week on this task.",
+          sourceIds: ["src_1", "src_2"],
+          solutions: [
+            { title: "ML-powered auto-matching", description: "Use ML to improve match accuracy from 60% to 90%+", stack: ["ML", "backend"] },
+            { title: "Bulk action tools", description: "Allow marking multiple rows as matched in one click", stack: ["frontend"] },
+          ],
+        },
+        {
+          id: "prob_2",
+          title: "Chargeback disputes lack transparency",
+          tags: ["UX" as const],
+          difficulty: 3 as const,
+          journeySteps: [
+            { label: "Dispute filed", status: "ok" as const },
+            { label: "Evidence upload", status: "partial" as const },
+            { label: "Status updates", status: "failure" as const },
+            { label: "Resolution", status: "failure" as const },
+          ],
+          evidenceSummary: "Merchants report no visibility into dispute status. Average resolution time: 45-60 days with no communication.",
+          sourceIds: ["src_3"],
+          solutions: [
+            { title: "Real-time status dashboard", description: "Show dispute timeline with next steps and expected resolution date", stack: ["frontend", "backend"] },
+            { title: "Proactive notifications", description: "Email/SMS updates when dispute status changes", stack: ["backend"] },
+          ],
+        },
+        {
+          id: "prob_3",
+          title: "API rate limits cause integration friction",
+          tags: ["API" as const],
+          difficulty: 2 as const,
+          journeySteps: [
+            { label: "Integration starts", status: "ok" as const },
+            { label: "Hit rate limits", status: "partial" as const },
+            { label: "Retry logic", status: "partial" as const },
+            { label: "Stable sync", status: "ok" as const },
+          ],
+          evidenceSummary: "Developers report 429 errors during peak hours. Current limits: 100 req/min insufficient for high-volume merchants.",
+          sourceIds: ["src_4"],
+          solutions: [
+            { title: "Tiered rate limits", description: "Offer 500 req/min for enterprise customers", stack: ["backend"] },
+            { title: "Burst allowance", description: "Allow temporary spikes up to 200% of limit with cooldown", stack: ["backend"] },
+          ],
+        },
+      ],
+    };
+    dispatch({ type: "SET_PROBLEM_SET", problemSet: testProblems });
   }
 
   useEffect(() => {
@@ -74,6 +154,25 @@ export default function ProblemsPage() {
           )}
         </div>
       </div>
+
+      {/* Debug button */}
+      {!hasProblemSet && !isLoading && (
+        <button
+          onClick={loadTestProblems}
+          style={{
+            fontSize: "0.75rem",
+            padding: "0.5rem 1rem",
+            background: "var(--research-blue)",
+            color: "var(--paper)",
+            border: "none",
+            borderRadius: "var(--radius)",
+            cursor: "pointer",
+            marginBottom: "1rem",
+          }}
+        >
+          [DEBUG] Load Test Problems
+        </button>
+      )}
 
       {/* Error */}
       {hasError && (
