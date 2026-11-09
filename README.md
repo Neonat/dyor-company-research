@@ -32,8 +32,8 @@ configuration includes a Wouter patch and a dependency override, so retain
 `pnpm-lock.yaml` and `patches/` when installing.
 
 ```bash
-git clone https://github.com/Neonat/dyor.git
-cd dyor
+git clone https://github.com/Neonat/dyor-company-research.git
+cd dyor-company-research
 pnpm install --frozen-lockfile --ignore-scripts
 # Configure a git-ignored .env at the repository root; see below.
 pnpm dev
@@ -72,12 +72,13 @@ be confused with the active configuration above. The model helper reads
 
 ```bash
 pnpm check                  # TypeScript, no output files
-pnpm test                   # Existing Vitest procedure/schema and logout tests
+pnpm test                   # Eight existing offline Vitest checks
 pnpm build                  # Vite client + Express bundle in dist/
 pnpm start                  # Serve the built application
 ```
 
-The existing tests mock LLM responses and do not validate live Exa/Gamma requests,
+The eight existing checks cover procedure/schema behaviour and logout. They mock
+LLM responses and do not validate live Exa/Gamma requests,
 provider compatibility, or a complete browser journey. `pnpm format` rewrites
 repository formatting. `pnpm db:push` generates and applies MySQL migrations for
 the inherited user database; it is separate from the browser-based analysis
