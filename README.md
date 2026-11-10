@@ -9,13 +9,11 @@ checkpoint.
 **Project context:** built for a past **Build Club hackathon**. This repository
 preserves the hackathon prototype and subsequent development iterations.
 
-## Nathaniel's contribution and engineering decisions
+## Engineering decisions
 
-Nathaniel Sim developed this hackathon prototype with **Manus-assisted
-implementation**. The history retains both his commits and `manus-agent`
-checkpoints. His recorded follow-up work includes
-[structured problem generation with JSON-schema responses](https://github.com/Neonat/dyor-company-research/commit/1cd850448a5274b560c22a420d4254ec07943a9f)
-and [handling structured model content and tool-call responses](https://github.com/Neonat/dyor-company-research/commit/c526f8e8e9d5e80a01f321d15b00c0d3896e2090).
+The hackathon prototype was built with **Manus-assisted implementation**. Its
+history preserves both implementation checkpoints and subsequent fixes to
+structured problem generation and model-response handling.
 
 The prototype explores three practical design decisions:
 
