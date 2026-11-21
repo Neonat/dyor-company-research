@@ -85,19 +85,18 @@ The current screens call the tRPC procedures in
 [`server/routers.ts`](server/routers.ts). The separate serverless proxy in
 [`api/proxy.ts`](api/proxy.ts) uses `ANTHROPIC_API_KEY`, `EXA_API_KEY`,
 `GAMMA_API_KEY`, and `CANVA_API_KEY`. Those variables do not configure the active
-tRPC workflow. The model helper reads `BUILT_IN_FORGE_API_KEY`, despite an
-inherited missing-key error mentioning `OPENAI_API_KEY`.
+tRPC workflow. The model helper reads `BUILT_IN_FORGE_API_KEY`.
 
 ## Checks and production build
 
 ```bash
 pnpm check                  # TypeScript, no output files
-pnpm test                   # Eight existing offline Vitest checks
+pnpm test                   # Offline Vitest checks
 pnpm build                  # Vite client + Express bundle in dist/
 pnpm start                  # Serve the built application
 ```
 
-The eight existing checks cover procedure/schema behaviour and logout. They mock
+The checks cover procedure/schema behaviour, logout, and missing model credentials. They mock
 LLM responses and do not validate live Exa/Gamma requests,
 provider compatibility, or a complete browser journey. `pnpm format` rewrites
 repository formatting. `pnpm db:push` generates and applies MySQL migrations for
