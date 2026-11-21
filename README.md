@@ -82,14 +82,11 @@ there is no complete offline research mode.
 | `PORT`                                                                   | Optional preferred server port, default `3000`.                                                                                                  |
 
 The current screens call the tRPC procedures in
-[`server/routers.ts`](server/routers.ts). The alternate proxy implementations in
-[`api/proxy.ts`](api/proxy.ts), [`server/index.ts`](server/index.ts), and
-[`client/src/api/`](client/src/api/) are retained development code; they are not
-the entry point selected by the package scripts. Their `ANTHROPIC_API_KEY`,
-`EXA_API_KEY`, `GAMMA_API_KEY` and `CANVA_API_KEY` environment variables should not
-be confused with the active configuration above. The model helper reads
-`BUILT_IN_FORGE_API_KEY`, despite an inherited missing-key error mentioning
-`OPENAI_API_KEY`.
+[`server/routers.ts`](server/routers.ts). The separate serverless proxy in
+[`api/proxy.ts`](api/proxy.ts) uses `ANTHROPIC_API_KEY`, `EXA_API_KEY`,
+`GAMMA_API_KEY`, and `CANVA_API_KEY`. Those variables do not configure the active
+tRPC workflow. The model helper reads `BUILT_IN_FORGE_API_KEY`, despite an
+inherited missing-key error mentioning `OPENAI_API_KEY`.
 
 ## Checks and production build
 
